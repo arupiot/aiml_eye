@@ -1,4 +1,4 @@
-Python libraries:
+Python 3 libraries:
   opencv
   dlib
   tqdm
