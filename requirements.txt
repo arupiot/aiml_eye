@@ -1,2 +1,7 @@
-opencv
-dlib
+Python libraries:
+  opencv
+  dlib
+  tqdm
+  nltk
+  tkinter
+  panda3d
