@@ -45,7 +45,7 @@ class deterministicFinder:
         """
         self.reference_time = time.clock()
 
-    def getPosition(self):
+    def getCurrentPosition(self):
         """
         Returns the wanted position.
         """
@@ -113,10 +113,50 @@ class videoStreamFinder:
         self.process_this_frame = not self.process_this_frame
 
 
-    def getPosition(self):
+    def getCurrentPosition(self):
         """
         Returns the wanted position.
         The returned value should be in [-1, 1]
         """
         self._actualizePosition()
         return self.currentPosition
+
+
+class positionFinderFromStreamProcessor:
+    """
+    This class implements a finder that uses in real time the results of the
+    stream processor.
+    """
+    def __init__(self, stream_processor):
+        """
+        Initialization of the class.
+        
+        :param stream_processor: The stream processor the class relies on.
+        """
+        # Initialize constructor for the class.
+        self.stream_processor = stream_processor
+        # Initialize current position.
+        self.currentPosition = 0
+    
+    def getCurrentPosition(self):
+        """
+        Returns the current position of the found detection, based on the 
+        results of the stream processor.
+        
+        :return: A value in [-1, 1] corresponding to the location of the detection
+        in the image. -1 correspond to a detection at the very left of the image
+        and +1 at the very right. If nothing is detected, returns 0.
+        """
+        # Get current locations of detections.
+        current_locations = self.stream_processor.getCurrentLocations()
+        # Get current image size.
+        [width, height] = self.stream_processor.getCurrentImageSize()
+        # Compute the output value. We take the barycenter of the first 
+        # location and normalizes it by the width of the image.
+        if len(current_locations) > 0:
+            # Get value for first locations.
+            [[x1, y1], [x2, y2], [x3, y3], [x4, y4]] = current_locations[0]
+            value = 2 * ((x1 + x2 + x3 + x4) / (4 * width)) - 1
+        else:
+            value = 0
+        return value
