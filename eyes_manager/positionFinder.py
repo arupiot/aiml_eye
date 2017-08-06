@@ -53,7 +53,8 @@ class deterministicFinder:
 
 class videoStreamFinder:
     """
-    This class returns a finder that analyses the output of a video stream.
+    This class returns a finder that analyses the output of a video stream, 
+    using a standard detector.
     """
     def __init__(self, video_stream, detector, resize_factor = 3):
         """

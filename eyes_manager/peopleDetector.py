@@ -10,6 +10,10 @@ The goal of this program is to implement different methods to detect
 pedestrian in images.
 We copy functions from the face_recognition api 
 (https://github.com/ageitgey/face_recognition).
+The detectors must implement the function
+    getLocations(image)
+that takes an image as argument and returns the locations of detected people in
+the image.
 """
 
 ###############################################################################
