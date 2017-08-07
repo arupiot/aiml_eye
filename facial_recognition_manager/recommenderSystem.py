@@ -18,6 +18,7 @@ The different categories we aim at are :
     - Digital analyst.
 If the algorithm does not fing a category, it returns the string :
     'Unable to match description with profile'.
+Ultimately, we want to store every found recommendation separately.
 """
 
 ###############################################################################

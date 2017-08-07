@@ -38,11 +38,10 @@ class facialRecognitionGui:
     A class for the layout of the facial recognition Graphical User Interface.
     """
     # Initialize the class.
-    def __init__(self, videoStream, database, faceRecognition, recommenderSystem, logFile):
+    def __init__(self, stream_processor, database,  recommenderSystem, logFile):
         """
         Initialisation of the class.
 
-        :param videoStream: Video Stream that we consider;
         :param database: The database storing images, encodings and info of people.
         :param faceRecognition: The facial recognition tool.
         :param logFile: The logFileWriter object we will use to store information.
@@ -50,7 +49,7 @@ class facialRecognitionGui:
         # Store the video stream object and output path, then initialize
         # most recently read frame, thread for reading frames, and
         # thread stop event.
-        self.videoStream = videoStream
+        self.stream_processor = stream_processor
         self.frame = None
         self.cleanFrame = None
         self.thread = None
@@ -63,12 +62,12 @@ class facialRecognitionGui:
 
         # Initialize database, face comparator, and log file.
         self.database = database
-        self.faceRecognition = faceRecognition
         self.log_file = logFile
         self.recommenderSystem = recommenderSystem
 
-        # Initialize the root window and image panel.
+        # Initialize the root window and image panel (uncomment for fullscreen).
         self.root = tk.Tk()
+        # self.root.attributes('-fullscreen',True)
         self.panel = None
 
         # Background.
@@ -83,6 +82,22 @@ class facialRecognitionGui:
         bottom = tk.Frame(self.root)
         top.pack(side=tk.TOP)
         bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False)
+
+        # The output label.
+        self.v = tk.StringVar()
+        self.v.set("Hello!\n I recognize you")
+        self.output_frame = tk.Frame(self.root)
+        self.output_frame.pack(side="right", padx=10, pady=10, expand=True)
+        self.output_text = tk.Label(self.output_frame, textvariable=self.v, font=("Arial", 30))
+        self.output_text.pack(side="right", padx=10, pady=10, expand=True)
+
+        atop = tk.Frame(self.output_frame)
+        abottom = tk.Frame(self.output_frame)
+        atop.pack(side=tk.TOP)
+        abottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False)
+
+        button_test = tk.Button(abottom, text = 'bla', command = self.function_test).pack(side = "left", fill="none", expand = True)
+        button_test2 = tk.Button(abottom, text = 'bla2', command = self.function_test).pack(side = "left", fill="none", expand = True)
 
 
         # Create the widgets for the top part of the GUI,
@@ -102,6 +117,8 @@ class facialRecognitionGui:
         self.root.wm_title("Face Detection")
         self.root.wm_protocol("WM_DELETE_WINDOW", self.onClose)
 
+    def function_test(self):
+        pass
 
     def _processFrameForDisplay(self, frame):
         """
@@ -123,33 +140,17 @@ class facialRecognitionGui:
         """
         try:
             while not self.stopEvent.is_set():
-                # Read current frame.
-                ret, frame = self.videoStream.read()
-                self.cleanFrame = frame.copy()
-
-                # Process only some frames.
-                if (self.counter_frame % self.process_every == 0):
-                    # Resize_frame
-                    small_frame = scipy.misc.imresize(frame, 1 / self.resize_factor)
-                    # Apply face recognition algorithm.
-                    result = self.faceRecognition.analyseFrame(small_frame, self.database)
-                # Draw results taking into account the resize factor.
-                frame = self.faceRecognition.drawResult(frame, [(name_match, distance, self.resize_factor * np.array(face_location)) for (name_match, distance, face_location) in result])
-                # Print obtained profiles.
-                # for (name_match, distance, face_location) in result:
-                #     print(self.recommenderSystem.computeProfile(name_match))
-
-                self.counter_frame += 1
-                self.frame = frame
+                # Get frames.
+                (self.cleanFrame, self.frame) = self.stream_processor.drawCurrentFrame(self.database)
 
                 # Process the current frame for display.
                 image = self._processFrameForDisplay(self.frame)
 
                 # If the panel is not None, we need to initialize it.
                 if self.panel is None:
-                    self.panel = tk.Label(image=image)
+                    self.panel = tk.Label(self.root, image=image)
                     self.panel.image = image
-                    self.panel.pack(side="left", padx=10, pady=10)
+                    self.panel.pack(side="right", padx=10, pady=10)
 
                 # Otherwise, simply update the panel.
                 else:
@@ -162,7 +163,7 @@ class facialRecognitionGui:
 
     def captureFace(self):
         """
-        Action for the 'save face button'.
+        Action for the 'capture face button'.
         """
         # Keep log of action.
         self.log_file.message('Action: capture face.')
@@ -265,5 +266,5 @@ class facialRecognitionGui:
     		# the quit process to continue.
         self.stopEvent.set()
         self.root.destroy()
-        self.videoStream.release()
+        self.stream_processor.video_stream.close()
         print("Closing...")

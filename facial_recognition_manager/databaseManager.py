@@ -58,7 +58,7 @@ class database:
         self.folder_name_info = folder_name_info
 
         # Initialize algorithm for facial recognition.
-        self.facial_recognition = facialRecognition.faceComparator
+        self.facial_recognition = facialRecognition.faceComparator()
 
         # Extract the data from the file.
         print('Loading faces from file ' + self.file_name)
@@ -103,7 +103,7 @@ class database:
             self.table_faces = np.append(self.table_faces, [(encodings[0], face_name, link)], axis = 0)
             cv2.imwrite(self.folder_name_images + '\\' + face_name + '\\' + file_name + '.jpg', frame)
             np.save(self.file_name, self.table_faces)
-
+        # Return results.
         return name_already_exists, one_face_detected
 
 

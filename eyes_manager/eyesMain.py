@@ -31,16 +31,16 @@ if __name__ == '__main__':
     # Define video stream.
     video_stream = streamProcessor.webcamStream()
     
-    # Define stream processor.
+    # Define stream processor based on the video stream and the detector.
 #    stream_processor = streamProcessor.streamProcessorFromDetector(video_stream, detector)
     stream_processor = streamProcessor.streamProcessorWithTracker(video_stream, detector, nb_trackers = 5, tracking_time = 100, resize_factor = 4, process_every = 2)
 
-    # Define position finder.
+    # Define position finder based on the stream processor.
     # position_finder = positionFinder.videoStreamFinder(video_stream, detector)
 #    position_finder = positionFinder.deterministicFinder()
     position_finder = positionFinder.positionFinderFromStreamProcessor(stream_processor)
 
-    # Define eye model.
+    # Define eye model based on the position finder.
     eye_model = eyeModel.basicEye(position_finder.getCurrentPosition)
 
     # Run eye model.

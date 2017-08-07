@@ -10,6 +10,12 @@ The purpose of this module is to implement the algorithm of face recognition.
 For that, we use the Dlib library.
 We also copy functions from the face_recognition api
 (https://github.com/ageitgey/face_recognition).
+The face comparator must implement the function
+    analyseFrame(self, frame, database)
+that takes in entry a frame and a database such as the one implemented in
+databaseManager.py, and returns the list [(name, distance, location)]
+corresponding to the list of the closest name, the corresponding distance and
+location, for each location detected in the image.
 """
 
 ###############################################################################
