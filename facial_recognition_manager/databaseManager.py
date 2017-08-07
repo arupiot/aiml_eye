@@ -35,6 +35,8 @@ import cv2
 # Package used for natural language processing.
 import nltk
 
+from os.path import join
+import os.path
 
 ###############################################################################
 # Main content of the program.
@@ -44,7 +46,7 @@ class database:
     """
     A class for the management of the database.
     """
-    def __init__(self, folder_name_images = 'Database\\London_images', folder_name_info = 'Database\\London_info', file_name = 'Database\\London_images'):
+    def __init__(self, folder_name_images = join('Database','London_images'), folder_name_info = join('Database','London_info'), file_name = join('Database','London_images')):
         """
         Initialization of the class.
 
@@ -93,15 +95,15 @@ class database:
         if check_name and one_face_detected:
             try:
                 # Create dedicated folder and add picture.
-                os.mkdir(self.folder_name_images + '\\' + face_name)
+                os.mkdir(join(self.folder_name_images, face_name))
             except Exception:
                 name_already_exists = True
 
         if one_face_detected and not name_already_exists:
             # Save data
-            link = self.folder_name_images + '\\' + face_name + '\\' + file_name + '.jpg'
+            link = join(self.folder_name_images, face_name, file_name) + '.jpg'
             self.table_faces = np.append(self.table_faces, [(encodings[0], face_name, link)], axis = 0)
-            cv2.imwrite(self.folder_name_images + '\\' + face_name + '\\' + file_name + '.jpg', frame)
+            cv2.imwrite(join(self.folder_name_images, face_name, file_name) + '.jpg', frame)
             np.save(self.file_name, self.table_faces)
         # Return results.
         return name_already_exists, one_face_detected
@@ -123,7 +125,9 @@ class database:
             try:
                 os.remove(link)
                 # We even delete the folder if it is empty.
-                link_to_folder = link.split('\\')[0] + '\\' +link.split('\\')[1]
+                # TODO: Adapt it for linux.
+                #link_to_folder = link.split('\\')[0] + '\\' +link.split('\\')[1]
+                link_to_folder = os.path.split(link)[0]
                 if len(os.listdir(link_to_folder)) == 0:
                     shutil.rmtree(link_to_folder)
             except Exception:
@@ -140,9 +144,9 @@ class database:
         :return: The corresponding image.
         """
         # Get to folder.
-        link_folder = self.folder_name_images + '\\' + name
+        link_folder = join(self.folder_name_images, name)
         list_images = os.listdir(link_folder)
-        return cv2.imread(link_folder + '\\' + list_images[0])
+        return cv2.imread(join(link_folder, list_images[0]))
 
 
     def getInfo(self, name):
@@ -154,9 +158,9 @@ class database:
         corresponding person.
         """
         # Get to location.
-        filename = self.folder_name_info + '\\' + name + '\\' + name + '_.txt'
+        filename = join(self.folder_name_info, name, name) + '_.txt'
         # Read content of file.
-        with open(filename, 'r') as file:
+        with open(filename, 'r', encoding = "ISO-8859-1") as file:
             # Obtain card and bio.
             file_content = file.read()
             file_card = file_content.split('CARD:\n')[1].split('BIO:\n')[0]
@@ -208,9 +212,9 @@ class database:
         people_info = []
         # Browse all names.
         for name in os.listdir(self.folder_name_info):
-            filename = self.folder_name_info + '\\' + name + '\\' + name + '_.txt'
+            filename = join(self.folder_name_info, name, name) + '_.txt'
             # Read content of file.
-            with open(filename, 'r') as file:
+            with open(filename, 'r', encoding = "ISO-8859-1") as file:
                 # Obtain card and bio.
                 file_content = file.read()
                 file_card = file_content.split('CARD:\n')[1].split('BIO:\n')[0]

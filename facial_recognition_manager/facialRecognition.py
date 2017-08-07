@@ -27,7 +27,7 @@ import scipy.misc
 import dlib
 import numpy as np
 import cv2
-
+from os.path import join
 
 ###############################################################################
 # Definition of global variables.
@@ -59,9 +59,9 @@ class faceComparator:
 
         # Initialize models.
         self.face_detector = dlib.get_frontal_face_detector()
-        self.predictor_model = 'Models\\shape_predictor_68_face_landmarks.dat'
+        self.predictor_model = join('Models','shape_predictor_68_face_landmarks.dat')
         self.pose_predictor = dlib.shape_predictor(self.predictor_model)
-        self.face_recognition_model = 'Models\\dlib_face_recognition_resnet_model_v1.dat'
+        self.face_recognition_model = join('Models','dlib_face_recognition_resnet_model_v1.dat')
         self.face_encoder = dlib.face_recognition_model_v1(self.face_recognition_model)
 
 

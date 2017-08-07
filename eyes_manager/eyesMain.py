@@ -33,7 +33,7 @@ if __name__ == '__main__':
     
     # Define stream processor based on the video stream and the detector.
 #    stream_processor = streamProcessor.streamProcessorFromDetector(video_stream, detector)
-    stream_processor = streamProcessor.streamProcessorWithTracker(video_stream, detector, nb_trackers = 5, tracking_time = 100, resize_factor = 4, process_every = 2)
+    stream_processor = streamProcessor.streamProcessorWithTracker(video_stream, detector, nb_trackers = 5, tracking_time = 100, resize_factor = 2, process_every = 2)
 
     # Define position finder based on the stream processor.
     # position_finder = positionFinder.videoStreamFinder(video_stream, detector)

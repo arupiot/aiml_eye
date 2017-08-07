@@ -83,23 +83,6 @@ class facialRecognitionGui:
         top.pack(side=tk.TOP)
         bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False)
 
-        # The output label.
-        self.v = tk.StringVar()
-        self.v.set("Hello!\n I recognize you")
-        self.output_frame = tk.Frame(self.root)
-        self.output_frame.pack(side="right", padx=10, pady=10, expand=True)
-        self.output_text = tk.Label(self.output_frame, textvariable=self.v, font=("Arial", 30))
-        self.output_text.pack(side="right", padx=10, pady=10, expand=True)
-
-        atop = tk.Frame(self.output_frame)
-        abottom = tk.Frame(self.output_frame)
-        atop.pack(side=tk.TOP)
-        abottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False)
-
-        button_test = tk.Button(abottom, text = 'bla', command = self.function_test).pack(side = "left", fill="none", expand = True)
-        button_test2 = tk.Button(abottom, text = 'bla2', command = self.function_test).pack(side = "left", fill="none", expand = True)
-
-
         # Create the widgets for the top part of the GUI,
         # and lay them out.
         save_face_button = tk.Button(self.root, text="Capture face", width=20, height=2, command=self.captureFace)
@@ -117,8 +100,6 @@ class facialRecognitionGui:
         self.root.wm_title("Face Detection")
         self.root.wm_protocol("WM_DELETE_WINDOW", self.onClose)
 
-    def function_test(self):
-        pass
 
     def _processFrameForDisplay(self, frame):
         """
@@ -130,6 +111,8 @@ class facialRecognitionGui:
         b,g,r = cv2.split(frame)
         frame = cv2.merge((r,g,b))
         image = Image.fromarray(frame)
+        #print(dir(image))
+        #image.show()
         image = ImageTk.PhotoImage(image)
         return image
 
@@ -141,6 +124,7 @@ class facialRecognitionGui:
         try:
             while not self.stopEvent.is_set():
                 # Get frames.
+                print('processing frame')
                 (self.cleanFrame, self.frame) = self.stream_processor.drawCurrentFrame(self.database)
 
                 # Process the current frame for display.
