@@ -7,15 +7,17 @@ Created on Fri Jul 28 13:15:27 2017
 
 """
 The purpose of this module is to implement the database of faces and information.
-We will implement 5 functions :
+We will implement 4 functions :
     - Add(picture, person_name, picture_file_name) to add a person in the database.
     - Remove(link, hardRemove = True) to remove a person from the database
     the hardRemove parameter defines whether we remove physically the information
     from the disk.
     - GetImage(name) to retrieve a picture of a person knowing their name.
-    - GetInfo(name) to retrieve the profile information of a person knowing
-    their name.
-    - GetAllInfo() to retrieve all information of all persons in the database.
+    - GetProfile(name) to retrieve the profile of a person knowing their name.
+
+Our implementation is based on an array of the form
+    [(encodings, name, path_to_image, profile)]
+for every stored image.
 """
 
 ###############################################################################
@@ -26,17 +28,14 @@ We will implement 5 functions :
 import os
 import shutil
 import re
+from os.path import join, split
+import os.path
 
 # Packages used for image processing and numeric computing.
 import numpy as np
 import facialRecognition
 import cv2
 
-# Package used for natural language processing.
-import nltk
-
-from os.path import join
-import os.path
 
 ###############################################################################
 # Main content of the program.
@@ -46,31 +45,34 @@ class database:
     """
     A class for the management of the database.
     """
-    def __init__(self, folder_name_images = join('Database','London_images'), folder_name_info = join('Database','London_info'), file_name = join('Database','London_images')):
+    def __init__(self, file_name = join('Database','London_database')):
         """
         Initialization of the class.
 
-        :param folder_name_images: The name of the folder in which images are kept.
-        :param file_name: The numpy file containing the encoding information.
+        :param file_name: Filename to the numpy file containing the encoding
+        information. It must be an array of the form [(encodings, name, path_to_image, profile)]
         """
-        # Initialize useful variables.
+        # Initialize constructor.
         self.file_name = file_name
-        self.table_faces = None
-        self.folder_name_images = folder_name_images
-        self.folder_name_info = folder_name_info
 
-        # Initialize algorithm for facial recognition.
-        self.facial_recognition = facialRecognition.faceComparator()
-
-        # Extract the data from the file.
+        # Open file.
         print('Loading faces from file ' + self.file_name)
         self.table_faces = np.load(self.file_name + '.npy')
         print('Loaded ' + str(len(self.table_faces)) + ' faces.')
 
+        # Get path to images folder.
+        self.folder_name_images = join(split(self.file_name)[0], split(split(self.table_faces[0][2])[0])[0])
+
+        # Initialize algorithm for facial recognition.
+        self.facial_recognition = facialRecognition.faceComparator()
+
+        # Default profile value.
+        self.DEFAULT_PROFILE = 'Unable to match description with profile'
+
 
     def add(self, frame, face_name, file_name, check_name = True):
         """
-        Attempts to update the database adding picture in path 'training_images\\face_name\\file_name.jpg'.
+        Attempts to update the database adding picture in path 'self.folder_name_images\\face_name\\file_name.jpg'.
         It computes and returns 2 booleans : name_already_exists and one_face_detected,
         and the database is updated iff (one_face_detected && !name_already_exists).
 
@@ -102,7 +104,7 @@ class database:
         if one_face_detected and not name_already_exists:
             # Save data
             link = join(self.folder_name_images, face_name, file_name) + '.jpg'
-            self.table_faces = np.append(self.table_faces, [(encodings[0], face_name, link)], axis = 0)
+            self.table_faces = np.append(self.table_faces, [(encodings[0], face_name, link, self.DEFAULT_PROFILE)], axis = 0)
             cv2.imwrite(join(self.folder_name_images, face_name, file_name) + '.jpg', frame)
             np.save(self.file_name, self.table_faces)
         # Return results.
@@ -125,8 +127,6 @@ class database:
             try:
                 os.remove(link)
                 # We even delete the folder if it is empty.
-                # TODO: Adapt it for linux.
-                #link_to_folder = link.split('\\')[0] + '\\' +link.split('\\')[1]
                 link_to_folder = os.path.split(link)[0]
                 if len(os.listdir(link_to_folder)) == 0:
                     shutil.rmtree(link_to_folder)
@@ -141,112 +141,31 @@ class database:
         Returns the image corresponding to the name.
 
         :param name: The considered name.
-        :return: The corresponding image.
+        :return: The corresponding image. Returns None if no image is found
+        (even though it should not happen).
         """
-        # Get to folder.
-        link_folder = join(self.folder_name_images, name)
-        list_images = os.listdir(link_folder)
-        return cv2.imread(join(link_folder, list_images[0]))
+        try:
+            # Get link to image from the table of encodings.
+            link = [path_to_image for (encoding, user_name, path_to_image, profile) in self.table_faces if user_name == name][0]
+            # Return cv2 image.
+            return cv2.imread(link)
+        except:
+            # Return default value.
+            return None
 
 
-    def getInfo(self, name):
+    def getProfile(self, name):
         """
-        Obtain the information corresponding to the name.
+        Returns the profile corresponding to the name.
 
         :param name: The considered name.
-        :return: A list of words extracted from the description of the
-        corresponding person.
+        :return: A string corresponding to the profile. Either precomputed
+        profile or 'Unable to match description with profile' if name is not in
+        the database (even though it should not happen).
         """
-        # Get to location.
-        filename = join(self.folder_name_info, name, name) + '_.txt'
-        # Read content of file.
-        with open(filename, 'r', encoding = "ISO-8859-1") as file:
-            # Obtain card and bio.
-            file_content = file.read()
-            file_card = file_content.split('CARD:\n')[1].split('BIO:\n')[0]
-            file_bio = file_content.split('BIO:\n')[1]
-        # From card, extract name, job, office.
-        people_name = file_card.split('\n')[0]
-        people_job = file_card.split('\n')[1]
-        people_office = file_card.split('\n')[2]
-        # From bio, extract different categories and content for each category.
-        bio_info = [(content.split('\n')[0], content.split('\n', 1)[-1]) for content in file_bio.split('\n\n')]
-        # Define interesting words.
-        interesting_words_individual = []
-        # Add job description.
-        if len(people_job.split(',')) == 2:
-            for word in people_job.casefold().split(',')[0].split(' '):
-                interesting_words_individual.append(word.casefold())
-        # Add content
-        for (categories, content) in bio_info:
-            for word in re.split('\W+', content):
-                interesting_words_individual.append(word.casefold())
-        # Remove useless words.
-        interesting_words_individual = list(filter(lambda a: a != '', interesting_words_individual))
-        return interesting_words_individual
-
-
-    def getAllInfo(self):
-        """
-        Obtain all the information of all persons in the database. We filter
-        it using a stopwords list.
-
-        :return: A dictionary correspondig to the frequency distribution of the
-        words in all profiles.
-        """
-        # Define stopwords for the filtering of information
-        stopwords = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
-        'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers',
-        'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
-        'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are',
-        'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does',
-        'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until',
-        'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into',
-        'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down',
-        'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here',
-        'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more',
-        'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so',
-        'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now', 'also']
-
-        # Extract info from all files.
-        people_info = []
-        # Browse all names.
-        for name in os.listdir(self.folder_name_info):
-            filename = join(self.folder_name_info, name, name) + '_.txt'
-            # Read content of file.
-            with open(filename, 'r', encoding = "ISO-8859-1") as file:
-                # Obtain card and bio.
-                file_content = file.read()
-                file_card = file_content.split('CARD:\n')[1].split('BIO:\n')[0]
-                file_bio = file_content.split('BIO:\n')[1]
-                # From card, extract name, job, office.
-                people_name = file_card.split('\n')[0]
-                people_job = file_card.split('\n')[1]
-                people_office = file_card.split('\n')[2]
-                # From bio, extract different categories and content for each category.
-                bio_info = [(content.split('\n')[0], content.split('\n', 1)[-1]) for content in file_bio.split('\n\n')]
-                # Update info file.
-                people_info.append((people_name, people_job, people_office, bio_info))
-
-        # Get list of interesting words for each person.
-        interesting_words = []
-        for (people_name, people_job, people_office, bio_info) in people_info:
-            interesting_words_individual = []
-            # Add job description.
-            if len(people_job.split(',')) == 2:
-                for word in people_job.casefold().split(',')[0].split(' '):
-                    interesting_words_individual.append(word.casefold())
-            # Add content
-            for (categories, content) in bio_info:
-                for word in re.split('\W+', content):
-                    interesting_words_individual.append(word.casefold())
-            # Remove useless words.
-            interesting_words_individual = list(filter(lambda a: a != '', interesting_words_individual))
-            # Append result
-            for word in interesting_words_individual:
-                interesting_words.append(word)
-        # Compute freuency distribution.
-        fdist = nltk.FreqDist([word for word in interesting_words if not word in stopwords])
-
-        # Return result.
-        return fdist
+        try:
+            # Get profile from the table of encodings.
+            return [profile for (encoding, user_name, path_to_image, profile) in self.table_faces if user_name == name][0]
+        except:
+            # Return default value.
+            return self.DEFAULT_PROFILE

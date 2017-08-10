@@ -135,10 +135,21 @@ class streamProcessor:
         # Increment counter.
         self.frame_counter += 1
 
+    def reinitializeCurrentName(self):
+        """
+        Reinitializes the value of the current identified name.
+        """
+        self.current_name = None
+
+    def getCurrentName(self):
+        """
+        Returns the current identified name.
+        """
+        return self.current_name
 
     def getCurrentAnalysis(self):
         """
-        Returns the current analysis.
+        Returns the current analysis, as [(name, distance, location) for each locations].
         """
         return self.current_analysis
 
@@ -152,4 +163,4 @@ class streamProcessor:
         to the current frame.
         """
         self._actualizeAnalysis(database)
-        return (self.current_frame, self.face_comparator.drawResult(self.current_frame, self.current_analysis))
+        return (self.current_frame.copy(), self.face_comparator.drawResult(self.current_frame, self.current_analysis))

@@ -1,254 +1,360 @@
-# -*- coding: utf-8 -*-
 """
-Created on Fri Jul 28 16:21:04 2017
-
-@author: Lucas
-"""
-
-"""
-The purpose of this module is to implement tools for the Graphical User Interface
-associated with the facial recognition algorithm.
+The purpose of this module is to implement the graphical user interface for
+the face recognition application.
+For that, we use the kivy library.
 """
 
-###############################################################################
+################################################################################
 # Imports.
-###############################################################################
+################################################################################
 
-# Packages for graphical user interface.
-import tkinter as tk
-import tkinter.simpledialog as simpledialog
-import tkinter.messagebox as messagebox
-import threading
+# Imports for the graphical user interface.
+from kivy.app import App
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.lang import Builder
+from kivy.uix.button import Button
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
 
-# Packages for image processing.
+from kivy.properties import StringProperty
+
+from kivy.uix.image import Image
+from kivy.clock import Clock
+from kivy.graphics.texture import Texture
+
+# Start application with full screen.
+# from kivy.core.window import Window
+# Window.fullscreen = 'auto'
+
+# Imports for Image analysis.
 import cv2
-from PIL import Image
-from PIL import ImageTk
-import scipy
-import numpy as np
+
+# Modules for the analysis of data.
+import databaseManager
+import facialRecognition
+import logFileWriter
+import streamProcessor
+
+# Utilitary.
+import time
+
+################################################################################
+# Definition of the graphical user interface.
+################################################################################
 
 
-###############################################################################
-# Main content of the module.
-###############################################################################
-
-
-class facialRecognitionGui:
+# Define and build the layout. We insert elements into box layouts.
+class FaceRecognitionGui(BoxLayout):
     """
-    A class for the layout of the facial recognition Graphical User Interface.
+    This class defines the global layout for the graphical user interface.
     """
-    # Initialize the class.
-    def __init__(self, stream_processor, database,  recommenderSystem, logFile):
+    pass
+
+
+class OutputLayout(BoxLayout):
+    """
+    This class defines the layout for the output frame.
+    """
+    pass
+
+# Load the layout from string (utlimately from .kv file).
+Builder.load_string('''
+<OutputLayout>
+    canvas.before:
+        Color:
+            rgba: 156, 25, 26, 0.5
+        Rectangle:
+            pos: self.pos[0], self.pos[1] + 100
+            size: self.size[0], self.size[1] * 0.8
+
+    BoxLayout:
+        id: output
+        orientation: 'vertical'
+
+        Label:
+            id: output_hello
+            markup: True
+            text: '[color=000000][b]Hello[/b][/color]'
+            font_size: 65
+            size_hint: 1, .5
+            pos_hint: {'center_x':.5, 'center_y': .5}
+
+        Label:
+            id: output_text
+            markup: True
+            text: app.output_text
+            font_size: 35
+            size_hint: 1, .5
+            pos_hint: {'center_x':.5, 'center_y': .5}
+
+
+<FaceRecognitionGui>
+    orientation: 'vertical'
+
+    canvas.before:
+        BorderImage:
+            border: 0, 0, 0, 0
+            source: 'background.jpg'
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        Image:
+            id: webcam
+            size_hint: 1.5, 1.5
+            pos_hint: {'center_x':.5, 'center_y': .5}
+
+        OutputLayout:
+            id: output_layout
+
+    Button:
+        text: 'Capture face'
+        size_hint: 0.4, 0.2
+        pos_hint: {'center_x':.5, 'center_y': .5}
+        on_press: app._buttonCommandCaptureFace()
+''')
+
+
+class MainApp(App):
+    """
+    Main class, corresponding to the application.
+    """
+    # Title of the app.
+    title = 'Face Recognition'
+    # The output text.
+    output_text = StringProperty('')
+
+    def build(self):
         """
-        Initialisation of the class.
-
-        :param database: The database storing images, encodings and info of people.
-        :param faceRecognition: The facial recognition tool.
-        :param logFile: The logFileWriter object we will use to store information.
+        Builder for the class.
+        We initialize the stream processor.
+        We then schedule the clock.
+        We return the layout.
         """
-        # Store the video stream object and output path, then initialize
-        # most recently read frame, thread for reading frames, and
-        # thread stop event.
-        self.stream_processor = stream_processor
-        self.frame = None
-        self.cleanFrame = None
-        self.thread = None
-        self.stopEvent = None
+        # Load database. Modify for empty database.
+        self.database = databaseManager.database()
+        # Load face comparator.
+        self.face_comparator = facialRecognition.faceComparator(tolerance = 0.6)
+        # Load log file. TODO: log different actions.
+        self.log_file = logFileWriter.logFile(file_name = 'log.txt', keepLog = False)
+        # Initialize video stream.
+        self.video_stream = streamProcessor.webcamStream()
+        # Initialize stream processor.
+        self.stream_processor = streamProcessor.streamProcessor(self.video_stream, self.face_comparator, nb_frames_to_analyse = 10, resize_factor = 4, process_every = 2)
 
-        # Initialize useful variables for data analysis.
-        self.counter_frame = 0
-        self.process_every = 2
-        self.resize_factor = 4
+        # Initialized useful parameters.
+        self.current_name = None
+        self.current_profile = None
+        self.is_identified = False
 
-        # Initialize database, face comparator, and log file.
-        self.database = database
-        self.log_file = logFile
-        self.recommenderSystem = recommenderSystem
+        # Schedule clock.
+        Clock.schedule_interval(self.update, 1.0/33.0)
 
-        # Initialize the root window and image panel (uncomment for fullscreen).
-        self.root = tk.Tk()
-        # self.root.attributes('-fullscreen',True)
-        self.panel = None
+        # Initialize gui layout.
+        self.layout = FaceRecognitionGui()
 
-        # Background.
-        self.background = ImageTk.PhotoImage(Image.open('background.jpg'))
-        background_label = tk.Label(self.root, image=self.background)
-        # background_label.place(x=0, y=0, relwidth=1, relheight=1)
-        background_label.place(x = 0, y = 0)
+        # Initialize output layout.
+        self.output_layout = self.layout.ids.output_layout
+        # Initialize output buttons.
+        self.box_layout = BoxLayout(id = 'output_buttons')
+        # Add output buttons layout to the output layout.
+        self.output_layout.ids.output.add_widget(self.box_layout)
 
-        # Create the main sections of the layout,
-        # and lay them out.
-        top = tk.Frame(self.root)
-        bottom = tk.Frame(self.root)
-        top.pack(side=tk.TOP)
-        bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False)
+        # Return gui layout.
+        return self.layout
 
-        # Create the widgets for the top part of the GUI,
-        # and lay them out.
-        save_face_button = tk.Button(self.root, text="Capture face", width=20, height=2, command=self.captureFace)
-        check_similar_faces_button = tk.Button(self.root, text="Check for similar faces", width=20, height=2, command=self.checkSimilarFaces)
-        save_face_button.pack(in_=bottom, side=tk.LEFT, fill="none", expand=True)
-        check_similar_faces_button.pack(in_=bottom, side=tk.LEFT, fill="none", expand=True)
-
-        # Start a thread that constantly pools the video sensor for
-        # the most recently read frame.
-        self.stopEvent = threading.Event()
-        self.thread = threading.Thread(target=self.videoLoop, args=())
-        self.thread.start()
-
-        # Set a callback to handle when the window is closed.
-        self.root.wm_title("Face Detection")
-        self.root.wm_protocol("WM_DELETE_WINDOW", self.onClose)
-
-
-    def _processFrameForDisplay(self, frame):
+    def _cvToKivy(self, frame):
         """
-        Converts frame from cv image to tk image, in order to display it.
+        Converts cv2 image to texture, so that it can be displayed in the layout.
 
-        :param frame: The image to convert.
-        :return: The converted image.
+        :param frame: The cv2 image to convert.
         """
-        b,g,r = cv2.split(frame)
-        frame = cv2.merge((r,g,b))
-        image = Image.fromarray(frame)
-        #print(dir(image))
-        #image.show()
-        image = ImageTk.PhotoImage(image)
-        return image
+        buf1 = cv2.flip(frame, 0)
+        buf = buf1.tostring()
+        texture1 = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
+        texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+        return texture1
 
-
-    def videoLoop(self):
+    def update(self, dt):
         """
-        Manage the video loop.
+        Updates the situation of the app.
+
+        :param dt: Time interval.
         """
-        try:
-            while not self.stopEvent.is_set():
-                # Get frames.
-                print('processing frame')
-                (self.cleanFrame, self.frame) = self.stream_processor.drawCurrentFrame(self.database)
+        # Get the current modified frame.
+        (self.clean_frame, self.frame) = self.stream_processor.drawCurrentFrame(self.database)
+        # Display image from the texture.
+        self.layout.ids['webcam'].texture = self._cvToKivy(self.frame)
+        # Get name.
+        self.current_name = self.stream_processor.getCurrentName()
+        # If name is not None, display it on the output frame.
+        if self.current_name != None:
+            if not self.is_identified:
+                self.is_identified = True
+                self.current_profile = self.database.getProfile(self.current_name)
+                self._addNameToOutputFrame()
+        # Else, reinitialize output frame.
+        else:
+            self._reInitializeOutputFrame()
 
-                # Process the current frame for display.
-                image = self._processFrameForDisplay(self.frame)
-
-                # If the panel is not None, we need to initialize it.
-                if self.panel is None:
-                    self.panel = tk.Label(self.root, image=image)
-                    self.panel.image = image
-                    self.panel.pack(side="right", padx=10, pady=10)
-
-                # Otherwise, simply update the panel.
-                else:
-                    self.panel.configure(image=image)
-                    self.panel.image = image
-
-        except RuntimeError:
-            print("Caught a RuntimeError.")
-
-
-    def captureFace(self):
+    def _addNameToOutputFrame(self):
         """
-        Action for the 'capture face button'.
+        Updates the output frame by adding the identified name.
+        It asks if the suggested name is right and creates two buttons 'Yes'
+        and 'No'.
+
+        :param name: The identified name for the person in front of the camera.
         """
-        # Keep log of action.
-        self.log_file.message('Action: capture face.')
-        try:
-            # Save the current frame.
-            current_frame = self.cleanFrame
-            # Open dialog to obtain the name.
-            name = simpledialog.askstring('Enter your name', 'Name')
+        # Modify the text.
+        self.output_text = '[color=000000]I think you are\n' + self.current_name + '[/color]'
+
+        # Add the two buttons.
+        self.box_layout.add_widget(Button(text= 'Yes', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._buttonCommandNameConfirmed()))
+        self.box_layout.add_widget(Button(text= 'No', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
+
+    def _reInitializeOutputFrame(self):
+        """
+        Reinitializes the output frame.
+        """
+        # Reinitialize current name and profile.
+        self.stream_processor.reinitializeCurrentName()
+        self.current_profile = None
+        # Reinitialize is_identified boolean.
+        self.is_identified = False
+        # Remove buttons.
+        self.box_layout.clear_widgets()
+        # Reinitialize text.
+        self.output_text = ''
+
+    def _buttonCommandNameConfirmed(self):
+        """
+        Button command, if the user confirms the proposed name.
+        It modifies the text to propose a recommendation based on the user
+        profile, then modifies the commands for the two new 'Yes' 'No' buttons.
+        """
+        # Modify the text.
+        self.output_text = '[color=000000]Do you wish to have\npersonalized recommendations based\non your Arup People profile?[/color]'
+        # Remove old buttons.
+        self.box_layout.clear_widgets()
+        # Add the two buttons.
+        self.box_layout.add_widget(Button(text= 'Yes', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._buttonCommandGetRecommendation()))
+        self.box_layout.add_widget(Button(text= 'No', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
+
+    def _buttonCommandGetRecommendation(self):
+        """
+        Button command, if the user asks to have personalized recommendations.
+        It modifies the text to display the user profile, and creates a new
+        button to return to the beginning.
+        Ultimately, it should trigger an action to change the lights of the
+        exhibition and invite the user to visit the highlited exhibits.
+        """
+        # Print profile.
+        self.output_text = '[color=000000]Your profile is:\n' + self.current_profile
+        # Remove buttons.
+        self.box_layout.clear_widgets()
+        # Add one button for return.
+        self.box_layout.add_widget(Button(text= 'Return', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
+
+    def _buttonCommandCaptureFace(self):
+        """
+        Button command, if the user clicks on 'Capture face'.
+        Takes a screenshot of the face and adds it to the database.
+        If the database is successfully updated, it should ask to add more
+        images.
+        """
+        def _errorMessage(message, callback):
+            """
+            Opens a popup with the given error message.
+            We give the popup two buttons:
+                - Try again, which calls the callback function.
+                - Quit, which quits.
+
+            :param message: The string message to display.
+            :param callback: The function to call when the user clicks on the
+            'Try again' button.
+            """
+            # Initialize content of popup.
+            content = BoxLayout(orientation='vertical')
+            # Initialize popup.
+            popup = Popup(title = 'Error', content = content, size=('300dp', '300dp'),
+                        size_hint=(None, None))
+            # Contents of popup.
+            content.add_widget(Label(text = message))
+            button_tryagain = Button(text= 'Try again', size_hint_y=None, height='50sp')
+            button_close = Button(text= 'Close', size_hint_y=None, height='50sp')
+            content.add_widget(button_close)
+            content.add_widget(button_tryagain)
+            # Bind pressing the buttons.
+            def internalCallback(instance):
+                popup.dismiss()
+                callback(instance)
+            button_tryagain.bind(on_release=internalCallback)
+            button_close.bind(on_release=popup.dismiss)
+
+            # Open popup.
+            popup.open()
+
+        def _popupGetName():
+            """
+            Opens a popup with input asking for name.
+            When the popup is closed, calls _processName()
+            """
+            # Initialize content of popup.
+            content = BoxLayout(orientation='vertical')
+            # Initialize popup.
+            popup = Popup(title='Please enter your name', content=content, size=('300dp', '300dp'),
+                        size_hint=(None, None))
+            # Contents of popup.
+            button_close = Button(text= 'Submit', size_hint_y=None, height='50sp')
+            input_name = TextInput(text = '', multiline = False)
+            content.add_widget(Label(text=''))
+            content.add_widget(input_name)
+            content.add_widget(button_close)
+            # Bind pressing the button and dismissing the popup.
+            button_close.bind(on_release=popup.dismiss)
+            # Bind closing the popup with the processing function.
+            def callback(instance):
+                _processName(input_name.text, 0)
+            popup.bind(on_dismiss = callback)
+            # Open popup.
+            popup.open()
+
+        def _processName(name, image_number):
+            """
+            Processes the given name: takes current screenshot and puts in the
+            database.
+
+            :param name: The input name of the user.
+            :param image_number: The number of the image in the database.
+            """
+            # Get current frame.
+            current_frame = self.clean_frame
             # Attempt to add picture to the database.
-            name_already_exists, one_face_detected = self.database.add(current_frame, name, name + '_0', check_name = True)
+            name_already_exists, one_face_detected = self.database.add(current_frame, name, name + '_' + str(image_number), check_name = (image_number == 0))
             # Handle exceptions.
             if name_already_exists:
-                self.log_file.message('Action unsuccessful: name ' + name + ' already exists.')
-                messagebox.showerror('Error', 'This name already exists.')
+                # Error: name already exists.
+                def callback_name(instance):
+                    _popupGetName()
+                _errorMessage('This name already exists.', callback_name)
             elif not one_face_detected:
-                self.log_file.message('Action unsuccessful: one and only one face has to be detected.')
-                messagebox.showerror('Error', 'An error has occured.\nPlease make sure that one and only one face is detected by the camera.')
+                # Error.
+                def callback_return(instance):
+                    _processName(name, image_number)
+                _errorMessage('An error occured.\nPlease make sure that one and\nonly one face is detected by\nthe camera.', callback_return)
             else:
-                # Action successful, keep log.
-                self.log_file.message('Action successful: ' + name + ' added to the database.')
+                # Action successful.
+                def callback_return_incr(instance):
+                    _processName(name, image_number + 1)
+                _errorMessage('Successfully captured your face.', callback_return_incr)
                 # Add more pictures.
-                nb_pictures = 1
-                while(messagebox.askyesno(title = name, message = 'Take another picture of you, ' + name + '?')):
-                    # Save the current frame.
-                    current_frame = self.cleanFrame
-                    # Attempt to add picture to the database.
-                    name_already_exists, one_face_detected = self.database.add(current_frame, name, name + '_' + str(nb_pictures), check_name = False)
-                    # Handle exceptions.
-                    if not one_face_detected:
-                        self.log_file.message('Action unsuccessful: one and only one face has to be detected.')
-                        messagebox.showerror('Error', 'An error has occured.\nPlease make sure that one and only one face is detected by the camera.')
-                    else:
-                        self.log_file.message('Action successful: took another picture for ' + name + '.')
-                        nb_pictures += 1
 
-        except Exception:
-            pass
+        # Call the main function.
+        _popupGetName()
 
 
-    def checkSimilarFaces(self):
-        """
-        Actions for the 'check similar faces' button.
-        We check for the 3 most similar faces in the database.
-        """
-        # Keep log of action.
-        self.log_file.message('Action: check for similar faces.')
-        # Save the current frame.
-        current_frame = self.cleanFrame
-        # Compute names corresponding to similar faces.
-        try:
-            similar_faces = self.faceRecognition.findSimilarFaces(current_frame, self.database, nb_faces = 3)
-            # Process the self frame for display.
-            width = current_frame.shape[1]
-            current_frame = cv2.resize(current_frame, (0, 0), fx = 200 / width, fy = 200 / width)
-            processed_current_frame = self._processFrameForDisplay(current_frame)
-
-            # Obtain and process other frames for display.
-            images_faces = []
-            for (i, (distance, name)) in zip(range(len(similar_faces)), similar_faces):
-                image = self.database.getImage(name)
-                width = image.shape[1]
-                resized_image = cv2.resize(image, (0, 0), fx = 200 / width, fy = 200 / width)
-                images_faces.append((resized_image, name, distance))
-
-            # Compute useful variables for display.
-            max_height = max(current_frame.shape[0], max([image.shape[0] for (image, name, distance) in images_faces]))
-            total_length = 210 * (len(images_faces) + 1) + 30
-
-            # Open new window.
-            window = tk.Toplevel(self.root)
-            window.geometry("%dx%d%+d%+d" % (total_length, max_height, 250, 125))
-
-            # Display current frame in the window.
-            lbl_image = tk.Label(window, image = processed_current_frame)
-            lbl_image.image = processed_current_frame
-            lbl_image.place(x = 10, y = max_height - current_frame.shape[0])
-            lbl_text = tk.Label(window, text = 'You')
-            lbl_text.text = 'You'
-            lbl_text.place(x = 10, y = max_height - current_frame.shape[0])
-
-            # Display other similar faces.
-            for (i, (image, name, distance)) in zip(range(len(images_faces)), images_faces):
-                processed_image = self._processFrameForDisplay(image)
-                lbl_image = tk.Label(window, image = processed_image)
-                lbl_image.image = processed_image
-                lbl_image.place(x = 210 * (i + 1) + 30, y = max_height - image.shape[0])
-                lbl_text = tk.Label(window, text = name + '\nProximity: ' + str(round(1 - distance, 3)))
-                lbl_text.text = name + '\nProximity: ' + str(round(1 - distance, 3))
-                lbl_text.place(x = 210 * (i + 1) + 30, y = max_height - image.shape[0])
-        except Exception as e:
-            # Open new window and add box error.
-            messagebox.showerror('Error', 'An error has occured.\nPlease make sure that one and only one face is detected by the camera.')
-
-
-    def onClose(self):
-        """
-        Close the window and all events.
-        """
-    		# Set the stop event, cleanup the camera, and allow the rest of
-    		# the quit process to continue.
-        self.stopEvent.set()
-        self.root.destroy()
-        self.stream_processor.video_stream.close()
-        print("Closing...")
+if __name__ == '__main__':
+    MainApp().run()

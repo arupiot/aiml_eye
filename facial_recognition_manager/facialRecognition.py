@@ -211,9 +211,10 @@ class faceComparator:
 
         :param face_encoding: The encoding to compare.
         :param database: The database to search.
+        :return: List [(distance, name)]
         """
         # TODO: improve the code.
-        return [(self.face_distance([known_encoding], face_encoding)[0], name) for (known_encoding, name, link) in database.table_faces]
+        return [(self.face_distance([known_encoding], face_encoding)[0], name) for (known_encoding, name, link, profile) in database.table_faces]
 
 
     def analyseFrame(self, frame, database):
