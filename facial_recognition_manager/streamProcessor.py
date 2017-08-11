@@ -1,20 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Aug  6 19:05:08 2017
-
-@author: Lucas
-"""
-
 """
 The purpose of this module is to implement functions that return in real time
 the name, distance, and locations of people in the video stream.
+
 We first implement a class to define a video stream. It must implement the
 function
+
     getCurrentFrame()
+
 which returns the current frame of the stream as np array.
+
 Then we implement classes that analyse such streams. They must implement the
 function
+
     getCurrentAnalysis()
+
 which returns the list [(name, distance, location)] corresponding to the list of
 the closest name, the corresponding distance and location, for each detected
 location in the image.
@@ -67,28 +66,28 @@ class webcamStream:
 class streamProcessor:
     """
     This class implements the analysis of the stream with the following methods:
+
         - We analyse only a fraction of the frames.
-        - Each analysed frame is internally resized (yet displayed with normal
-        size).
+        - Each analysed frame is internally resized (yet displayed with normal size).
         - We average the results over a number of frames.
+
     """
-    def __init__(self, video_stream, face_comparator, nb_frames_to_analyse = 10, resize_factor = 4, process_every = 2):
+    def __init__(self, video_stream, face_comparator, nb_frames_in_history = 10, closeness_threshold = 2.5, resize_factor = 4, process_every = 2):
         """
         Initialization of the class.
 
         :param video_stream: The video stream being analyzed.
         :param face_comparator: The face comparator used to analyse the frames.
-        :param nb_frames_to_analyse: The number of frames over which to average
-        the obtained analysis.
-        :param resize_factor: Before applying the detector, each frame is
-        resized by this factor. This allows for a faster computation.
-        :param process_every: We do not process each frame, but only a fraction
-        of them. We process only one frame in process_every.
+        :param nb_frames_in_history: The number of frames over which to average the obtained analysis.
+        :param closeness_threshold: The tolerance used to actualize the current name.
+        :param resize_factor: Before applying the detector, each frame is resized by this factor. This allows for a faster computation.
+        :param process_every: We do not process each frame, but only a fraction of them. We process only one frame in process_every.
         """
         # Initialization of constructors.
         self.video_stream = video_stream
         self.face_comparator = face_comparator
-        self.nb_frames_to_analyse = nb_frames_to_analyse
+        self.nb_frames_in_history = nb_frames_in_history
+        self.closeness_threshold = closeness_threshold
         self.resize_factor = resize_factor
         self.process_every = process_every
         # Initialization of useful parameters for stream analysis.
@@ -103,6 +102,7 @@ class streamProcessor:
     def _actualizeAnalysis(self, database):
         """
         Actualizes the computation of the analysis.
+
         :param database: The database with which to compare the frames.
         """
         # Get current frame.
@@ -113,7 +113,7 @@ class streamProcessor:
             small_frame = scipy.misc.imresize(self.current_frame, 1 / self.resize_factor)
             self.current_analysis = [(name_match, distance, self.resize_factor * np.array(face_location)) for (name_match, distance, face_location) in self.face_comparator.analyseFrame(small_frame, database)]
             # Actualize frame history.
-            if (len(self.frame_history) >= self.nb_frames_to_analyse):
+            if (len(self.frame_history) >= self.nb_frames_in_history):
                 del self.frame_history[0]
             self.frame_history.append(self.current_analysis)
             # Nullify frame counter to avoid dealing with very large numbers.
@@ -125,12 +125,13 @@ class streamProcessor:
         for [(name, distance, location)] in frame_history_1:
             results[name] = 0
         for [(name, distance, location)] in frame_history_1:
-            results[name] += distance
+            results[name] += 1 - distance
         results = [(key, results[key]) for key in results]
         results = sorted(results, key = lambda a : -a[1])
+        # results is now the array [(name, cumulative closeness)] corresponding to the recent history of detections.
         if len(results) == 0:
             self.current_name = None
-        elif ((results[0][1] >= 2.5) and (self.current_name == None)):
+        elif ((results[0][1] >= self.closeness_threshold) and (self.current_name == None)):
             self.current_name = results[0][0]
         # Increment counter.
         self.frame_counter += 1
@@ -159,8 +160,7 @@ class streamProcessor:
         Draw the current analysis on the current frame and return result as
         np.array.
 
-        :returns: A tuple (clean_frame, drawn_frame) of np.arrays corresponding
-        to the current frame.
+        :returns: A tuple (clean_frame, drawn_frame) of np.arrays corresponding to the current frame.
         """
         self._actualizeAnalysis(database)
         return (self.current_frame.copy(), self.face_comparator.drawResult(self.current_frame, self.current_analysis))

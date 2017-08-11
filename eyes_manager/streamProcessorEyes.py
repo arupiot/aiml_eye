@@ -1,20 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Aug  6 19:05:08 2017
-
-@author: Lucas
-"""
-
 """
 The purpose of this module is to implement functions that return in real time
 the locations of detected people in a video stream.
+
 We first implement a class to define a video stream. It must implement the
 function
+
     getCurrentFrame()
+
 which returns the current frame of the stream as np array.
+
 Then we implement classes that analyse such streams. They must implement the
 function
+
     getCurrentLocations()
+
 which returns the locations of detected people in the current frame.
 """
 
@@ -73,10 +72,8 @@ class streamProcessorFromDetector:
 
         :param video_stream: The video stream being analyzed.
         :param detector: The detector used for the analyse of frames.
-        :param resize_factor: Before applying the detector, each frame is
-        resized by this factor. This allows for a faster computation.
-        :param process_every: We do not process each frame, but only a fraction
-        of them. We process only one frame in process_every.
+        :param resize_factor: Before applying the detector, each frame is resized by this factor. This allows for a faster computation.
+        :param process_every: We do not process each frame, but only a fraction of them. We process only one frame in process_every.
         """
         # Initialize constructors.
         self.video_stream = video_stream
@@ -140,10 +137,8 @@ class streamProcessorWithTracker:
         :param detector: The detector used for the analyse of frames.
         :param nb_trackers: The maximal number of trackers that we use.
         :param tracking_time: The maximal amount of time a tracker can run.
-        :param resize_factor: Before applying the detector, each frame is
-        resized by this factor. This allows for a faster computation.
-        :param process_every: We do not process each frame, but only a fraction
-        of them. We process only one frame in process_every.
+        :param resize_factor: Before applying the detector, each frame is resized by this factor. This allows for a faster computation.
+        :param process_every: We do not process each frame, but only a fraction of them. We process only one frame in process_every.
         """
         # Initialization of constructors.
         self.video_stream = video_stream
@@ -167,8 +162,7 @@ class streamProcessorWithTracker:
         suppression algorith to avoid having multiple locations for only one
         detected object.
 
-        :param boxes: The found locations, as [(left, top, right, bottom)]
-        list.
+        :param boxes: The found locations, as [(left, top, right, bottom)] list.
         :param overlapThresh: The threshold for detecting overlapping boxes.
         """
         # If there are no boxes, return an empty list.

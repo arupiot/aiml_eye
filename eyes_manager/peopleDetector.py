@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jul 26 16:29:39 2017
-
-@author: Lucas
-"""
-
 """
 The goal of this program is to implement different methods to detect
 pedestrian in images.
-We copy functions from the face_recognition api 
+
+We copy functions from the face_recognition api
 (https://github.com/ageitgey/face_recognition).
+
 The detectors must implement the function
+
     getLocations(image)
-that takes an image as argument and returns the locations of detected people in
+
+which takes an image as argument and returns the locations of detected people in
 the image.
 """
 
@@ -46,7 +43,7 @@ class peopleDetectorDlib:
         """
         Initialization of the class.
 
-        :param detectors: an array of detectors.
+        :param detectors: An array of detectors.
         """
         self.detectors = detectors
         self.name = 'Dlib'
@@ -56,9 +53,9 @@ class peopleDetectorDlib:
         """
         Make sure a tuple in (top, right, bottom, left) order is within the bounds of the image.
 
-        :param css:  plain tuple representation of the rect in (top, right, bottom, left) order
-        :param image_shape: numpy shape of the image array
-        :return: a trimmed plain tuple representation of the rect in (top, right, bottom, left) order
+        :param css:  Plain tuple representation of the rect in (top, right, bottom, left) order
+        :param image_shape: Numpy shape of the image array
+        :return: A trimmed plain tuple representation of the rect in (top, right, bottom, left) order
         """
         return max(css[0], 0), min(css[1], image_shape[1]), min(css[2], image_shape[0]), max(css[3], 0)
 
@@ -67,8 +64,8 @@ class peopleDetectorDlib:
         """
         Convert a dlib 'rect' object to a plain tuple in (top, right, bottom, left) order
 
-        :param rect: a dlib 'rect' object
-        :return: a plain tuple representation of the rect in (top, right, bottom, left) order
+        :param rect: A dlib 'rect' object
+        :return: A plain tuple representation of the rect in (top, right, bottom, left) order
         """
         return rect.top(), rect.right(), rect.bottom(), rect.left()
 
@@ -86,10 +83,9 @@ class peopleDetectorDlib:
         """
         Returns the locations of the detected objects in the image.
 
-        :param detector: the detector used for the detection.
-        :param image: the considered image as numpy array.
-        :param number_of_times_to_upsample: used to refine detection but increases
-        time of computation.
+        :param detector: The detector used for the detection.
+        :param image: The considered image as numpy array.
+        :param number_of_times_to_upsample: Used to refine detection but increases time of computation.
         """
         locations = detector(image, number_of_times_to_upsample)
         locations = [self._css_to_locations(self._trim_css_to_bounds(self._rect_to_css(people), image.shape)) for people in locations]
@@ -99,6 +95,8 @@ class peopleDetectorDlib:
     def getLocations(self, image, number_of_times_to_upsample = 1):
         """
         Returns all locations for all detectors.
+
+        :param image: The considered image as numpy array.
         """
         locations = []
         for detector in self.detectors:
@@ -113,7 +111,8 @@ class peopleDetectorCV:
     def __init__(self):
         """
         Initialization of the class.
-        :param hog: the considered hog descriptor for the detection.
+
+        :param hog: The considered hog descriptor for the detection.
         """
         self.hog = cv2.HOGDescriptor()
         self.hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
@@ -124,9 +123,9 @@ class peopleDetectorCV:
         """
         Helper function to filter detected locations.
 
-        :param r: rectangle
-        :param q: rectangle
-        :return: whether r is inside q.
+        :param r: Rectangle
+        :param q: Rectangle
+        :return: Whether r is inside q.
         """
         rx, ry, rw, rh = r
         qx, qy, qw, qh = q
@@ -145,7 +144,8 @@ class peopleDetectorCV:
     def getLocations(self, image):
         """
         Returns the locations of the detections.
-        :param image: the considered image.
+
+        :param image: The considered image.
         """
         found, w = self.hog.detectMultiScale(image, winStride=(4,4), padding=(16,16), scale=1.05, hitThreshold = 0.25)
         found_filtered = []
@@ -172,7 +172,7 @@ class peopleDetectorBackSub:
         """
         Initialization of the class.
 
-        :param fgbg: background subtractor.
+        :param fgbg: Background subtractor.
         """
         self.fgbg = fgbg
         self.name = 'Background Substraction'
@@ -182,7 +182,7 @@ class peopleDetectorBackSub:
         """
         Get the locations of the detections.
 
-        :param image: the considered image.
+        :param image: The considered image.
         """
         fgmask = self.fgbg.apply(image)
         ret, fgmask = cv2.threshold(fgmask, 50, 255, cv2.THRESH_BINARY)
@@ -202,9 +202,9 @@ def drawLocations(image, locations, color = RED):
     """
     Draws the found locations in the image.
 
-    :param image: the considered image.
-    :param locations: the locations, as [[x1, y1], [x2, y2], [x3, y3], [x4, y4]] array.
-    :param color: the RGB color of the resulting drawing.
+    :param image: The considered image.
+    :param locations: The locations, as [[x1, y1], [x2, y2], [x3, y3], [x4, y4]] array.
+    :param color: The RGB color of the resulting drawing.
     """
     for box in locations:
         cv2.drawContours(image,[np.array(box)],0,(0,0,255),2)

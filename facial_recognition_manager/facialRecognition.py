@@ -1,19 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 28 14:57:35 2017
-
-@author: Lucas
-"""
-
 """
 The purpose of this module is to implement the algorithm of face recognition.
+
 For that, we use the Dlib library.
 We also copy functions from the face_recognition api
 (https://github.com/ageitgey/face_recognition).
+
 The face comparator must implement the function
+
     analyseFrame(self, frame, database)
+
 that takes in entry a frame and a database such as the one implemented in
-databaseManager.py, and returns the list [(name, distance, location)]
+databaseManager.py, and returns the list
+
+    [(name, distance, location)]
+
 corresponding to the list of the closest name, the corresponding distance and
 location, for each location detected in the image.
 """
@@ -51,8 +51,8 @@ class faceComparator:
         """
         Initialization of the class.
 
-        :param folder_name_images: the name of the folder in which images are kept.
-        :param file_name: the numpy file containing the encoding information.
+        :param folder_name_images: The name of the folder in which images are kept.
+        :param file_name: The numpy file containing the encoding information.
         """
         # Initialize useful variables.
         self.tolerance = tolerance
@@ -69,8 +69,8 @@ class faceComparator:
         """
         Convert a dlib 'rect' object to a plain tuple in (top, right, bottom, left) order
 
-        :param rect: a dlib 'rect' object
-        :return: a plain tuple representation of the rect in (top, right, bottom, left) order
+        :param rect: A dlib 'rect' object
+        :return: A plain tuple representation of the rect in (top, right, bottom, left) order
         """
         return rect.top(), rect.right(), rect.bottom(), rect.left()
 
@@ -79,8 +79,8 @@ class faceComparator:
         """
         Convert a tuple in (top, right, bottom, left) order to a dlib `rect` object
 
-        :param css:  plain tuple representation of the rect in (top, right, bottom, left) order
-        :return: a dlib `rect` object
+        :param css:  Plain tuple representation of the rect in (top, right, bottom, left) order
+        :return: A dlib `rect` object
         """
         return dlib.rectangle(css[3], css[0], css[1], css[2])
 
@@ -89,9 +89,9 @@ class faceComparator:
         """
         Make sure a tuple in (top, right, bottom, left) order is within the bounds of the image.
 
-        :param css:  plain tuple representation of the rect in (top, right, bottom, left) order
-        :param image_shape: numpy shape of the image array
-        :return: a trimmed plain tuple representation of the rect in (top, right, bottom, left) order
+        :param css:  Plain tuple representation of the rect in (top, right, bottom, left) order
+        :param image_shape: Numpy shape of the image array
+        :return: A trimmed plain tuple representation of the rect in (top, right, bottom, left) order
         """
         return max(css[0], 0), min(css[1], image_shape[1]), min(css[2], image_shape[0]), max(css[3], 0)
 
@@ -115,9 +115,9 @@ class faceComparator:
         """
         Loads an image file (.jpg, .png, etc) into a numpy array
 
-        :param filename: image file to load
-        :param mode: format to convert the image to. Only 'RGB' (8-bit RGB, 3 channels) and 'L' (black and white) are supported.
-        :return: image contents as numpy array
+        :param filename: Image file to load
+        :param mode: Format to convert the image to. Only 'RGB' (8-bit RGB, 3 channels) and 'L' (black and white) are supported.
+        :return: Image contents as numpy array
         """
         return scipy.misc.imread(filename, mode=mode)
 
@@ -157,7 +157,7 @@ class faceComparator:
         """
         Given an image, returns a dict of face feature locations (eyes, nose, etc) for each face in the image
 
-        :param face_image: image to search
+        :param face_image: Image to search
         :param face_locations: Optionally provide a list of face locations to check.
         :return: A list of dicts of face feature locations (eyes, nose, etc)
         """
@@ -224,8 +224,7 @@ class faceComparator:
 
         :param frame: The image to analyse.
         :param database: The database to search.
-        :return: A list [(name, distance, location)] corresponding to the identified names
-        and distances in the image.
+        :return: A list [(name, distance, location)] corresponding to the identified names and distances in the image.
         """
         # Find all the faces and face encodings in the current frame of video.
         face_locations = self.face_locations(frame)
@@ -256,11 +255,9 @@ class faceComparator:
         Display the obtained results.
 
         :param frame: The image to modify and display.
-        :param result: A list [(name, distance, location)] corresponding to the identified names
-        and distances in the image.
+        :param result: A list [(name, distance, location)] corresponding to the identified names and distances in the image.
         :param color: The color we draw.
-        :return: A modified frame: we draw a bow around the face, and a label
-        with the name and distance below the face.
+        :return: A modified frame: we draw a box around the face, and a label with the name and distance below the face.
         """
 
         # Display the results.

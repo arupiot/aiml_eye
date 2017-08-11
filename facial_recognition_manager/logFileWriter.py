@@ -1,13 +1,7 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 28 16:22:45 2017
-
-@author: Lucas
-"""
-
 """
 The purpose of this module is to implement a class allowing us to keep logs
 of the different actions realised.
+
 The analysis of such files may help to interpret the reception of the exhibit.
 """
 

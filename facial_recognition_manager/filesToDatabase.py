@@ -1,39 +1,48 @@
-# -*- coding: utf-8 -*-
 """
-Created on Tue Aug  8 11:02:07 2017
+The goal of this program is to convert the data present under the directory 'images_path'
+with the following architecture:
 
-@author: Lucas
-"""
+    person-1
 
-""" The goal of this program is to convert the data present under the directory 'images_path'
-    with the following architecture:
-        person-1
-        ├── image-1.jpg
-        ├── image-2.png
-        ...
-        └── image-p.png
+    ├── image-1.jpg
 
-        ...
+    ├── image-2.png
 
-        person-m
-        ├── image-1.png
-        ├── image-2.jpg
-        ...
-        └── image-q.png
-    and the data present under the directory 'London_info' with the following architecture:
-        person-1
-        ├── info.txt
+    ...
 
-        ...
+    └── image-p.png
 
-        person-m
-        ├── info.txt
-    The program will save the result under a file 'infos_path' containing the necessary data,
-    i.e. an array
-        [(encodings, name, path_to_image, profile)]
+    ...
 
-    To do that, we define here a basic recommender system. We also call for the
-    functions of the facialRecognition module.
+    person-m
+
+    ├── image-1.png
+
+    ├── image-2.jpg
+
+    ...
+
+    └── image-q.png
+
+and the data present under the directory 'London_info' with the following architecture:
+
+    person-1
+
+    └── info.txt
+
+    ...
+
+    person-m
+
+    └── info.txt
+
+The program will save the result under a file 'infos_path' containing the necessary data,
+i.e. an array
+
+    [(encodings, name, path_to_image, profile)]
+
+To do that, we define here a basic recommender system. We also call for the
+functions of the facialRecognition module.
 """
 
 
@@ -64,16 +73,23 @@ import nltk
 class basicRecommender:
     """
     A class for basic computation for recommendations.
-    We want it to implement 1 function :
+
+    We want it to implement 1 function:
+
         computeProfile(name),
+
     which assigns a category to the given name.
+
     The different categories we aim at are by default:
+
         - Business leader.
         - Techical leader.
         - Digital leader.
         - Digital designer.
         - Digital analyst.
-    If the algorithm does not fing a category, it returns the string :
+
+    If the algorithm does not find a category, it returns the string :
+
         'Unable to match description with profile'.
     """
     def __init__(self, folder_name_info, fdist = 'default', categories = 'default'):
@@ -107,8 +123,8 @@ class basicRecommender:
         """
         Obtain the information corresponding to the name.
 
-        :param name: the considered name.
-        :return: a list of words extracted from the description.
+        :param name: The considered name.
+        :return: A list of words extracted from the description.
         """
         # Get to location.
         filename = self.folder_name_info + '\\' + name + '\\' + name + '_.txt'
@@ -144,8 +160,7 @@ class basicRecommender:
         Obtain all the information of all persons in the database. We filter
         it using a stopwords list.
 
-        :return: A dictionary correspondig to the frequency distribution of the
-        words in all profiles.
+        :return: A dictionary correspondig to the frequency distribution of the words in all profiles.
         """
         # Define stopwords for the filtering of information
         stopwords = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
@@ -209,11 +224,9 @@ class basicRecommender:
         """
         Computes the 'bag of words' feature of the text in relation to the reference words.
 
-        :param reference_words: A list [(word, number_of_occurence)] corresponding to the different
-        reference words, along with their total number of occurence in all descriptions.
+        :param reference_words: A list [(word, number_of_occurence)] corresponding to the different reference words, along with their total number of occurence in all descriptions.
         :param text: A list [word] of words in which to search.
-        :return: The list [n1, n2, n3, ...] with ni being the number of occurences of the ith reference word in the text
-        divided by the total number of occurences of this word in the total environment.
+        :return: The list [n1, n2, n3, ...] with ni being the number of occurences of the ith reference word in the text divided by the total number of occurences of this word in the total environment.
         """
         return [len([word for word in text if word == reference_words[i][0]]) /reference_words[i][1] for i in range(len(reference_words))]
 

@@ -1,6 +1,7 @@
 """
 The purpose of this module is to implement the graphical user interface for
 the face recognition application.
+
 For that, we use the kivy library.
 """
 
@@ -143,7 +144,7 @@ class MainApp(App):
         # Initialize video stream.
         self.video_stream = streamProcessor.webcamStream()
         # Initialize stream processor.
-        self.stream_processor = streamProcessor.streamProcessor(self.video_stream, self.face_comparator, nb_frames_to_analyse = 10, resize_factor = 4, process_every = 2)
+        self.stream_processor = streamProcessor.streamProcessor(self.video_stream, self.face_comparator, nb_frames_in_history = 10, closeness_threshold = 2.5, resize_factor = 4, process_every = 2)
 
         # Initialized useful parameters.
         self.current_name = None
@@ -166,17 +167,6 @@ class MainApp(App):
         # Return gui layout.
         return self.layout
 
-    def _cvToKivy(self, frame):
-        """
-        Converts cv2 image to texture, so that it can be displayed in the layout.
-
-        :param frame: The cv2 image to convert.
-        """
-        buf1 = cv2.flip(frame, 0)
-        buf = buf1.tostring()
-        texture1 = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
-        texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
-        return texture1
 
     def update(self, dt):
         """
@@ -200,6 +190,20 @@ class MainApp(App):
         else:
             self._reInitializeOutputFrame()
 
+
+    def _cvToKivy(self, frame):
+        """
+        Converts cv2 image to texture, so that it can be displayed in the layout.
+
+        :param frame: The cv2 image to convert.
+        """
+        buf1 = cv2.flip(frame, 0)
+        buf = buf1.tostring()
+        texture1 = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
+        texture1.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
+        return texture1
+
+
     def _addNameToOutputFrame(self):
         """
         Updates the output frame by adding the identified name.
@@ -215,6 +219,7 @@ class MainApp(App):
         self.box_layout.add_widget(Button(text= 'Yes', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._buttonCommandNameConfirmed()))
         self.box_layout.add_widget(Button(text= 'No', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
 
+
     def _reInitializeOutputFrame(self):
         """
         Reinitializes the output frame.
@@ -229,6 +234,7 @@ class MainApp(App):
         # Reinitialize text.
         self.output_text = ''
 
+
     def _buttonCommandNameConfirmed(self):
         """
         Button command, if the user confirms the proposed name.
@@ -242,6 +248,7 @@ class MainApp(App):
         # Add the two buttons.
         self.box_layout.add_widget(Button(text= 'Yes', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._buttonCommandGetRecommendation()))
         self.box_layout.add_widget(Button(text= 'No', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
+
 
     def _buttonCommandGetRecommendation(self):
         """
@@ -258,6 +265,7 @@ class MainApp(App):
         # Add one button for return.
         self.box_layout.add_widget(Button(text= 'Return', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
 
+
     def _buttonCommandCaptureFace(self):
         """
         Button command, if the user clicks on 'Capture face'.
@@ -273,8 +281,7 @@ class MainApp(App):
                 - Quit, which quits.
 
             :param message: The string message to display.
-            :param callback: The function to call when the user clicks on the
-            'Try again' button.
+            :param callback: The function to call when the user clicks on the 'Try again' button.
             """
             # Initialize content of popup.
             content = BoxLayout(orientation='vertical')
@@ -300,7 +307,7 @@ class MainApp(App):
         def _popupGetName():
             """
             Opens a popup with input asking for name.
-            When the popup is closed, calls _processName()
+            When the popup is closed, calls _processName().
             """
             # Initialize content of popup.
             content = BoxLayout(orientation='vertical')

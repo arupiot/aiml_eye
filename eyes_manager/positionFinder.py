@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug  1 15:51:45 2017
-
-@author: Lucas
-"""
-
 """
 The purpose of this module is to implement funtions that return in real time
 positions of detections.
+
 For each implementation, we want the class to implement a function
+
     getCurrentPosition()
-that returns a value in [-1, 1] corresponding to the current position of the 
+
+which returns a value in [-1, 1] corresponding to the current position of the
 detection.
 """
 
@@ -55,28 +51,26 @@ class positionFinderFromStreamProcessor:
     def __init__(self, stream_processor):
         """
         Initialization of the class.
-        
+
         :param stream_processor: The stream processor the class relies on.
         """
         # Initialize constructor for the class.
         self.stream_processor = stream_processor
         # Initialize current position.
         self.currentPosition = 0
-    
+
     def getCurrentPosition(self):
         """
-        Returns the current position of the found detection, based on the 
+        Returns the current position of the found detection, based on the
         results of the stream processor.
-        
-        :return: A value in [-1, 1] corresponding to the location of the detection
-        in the image. -1 correspond to a detection at the very left of the image
-        and +1 at the very right. If nothing is detected, returns 0.
+
+        :return: A value in [-1, 1] corresponding to the location of the detection in the image. -1 correspond to a detection at the very left of the image and +1 at the very right. If nothing is detected, returns 0.
         """
         # Get current locations of detections.
         current_locations = self.stream_processor.getCurrentLocations()
         # Get current image size.
         [width, height] = self.stream_processor.getCurrentImageSize()
-        # Compute the output value. We take the barycenter of the first 
+        # Compute the output value. We take the barycenter of the first
         # location and normalizes it by the width of the image.
         if len(current_locations) > 0:
             # Get value for first locations.

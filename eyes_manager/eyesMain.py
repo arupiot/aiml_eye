@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jul 26 17:46:44 2017
-
-@author: Lucas
-"""
-
 """
 This is the main module for the eyes application.
 """
@@ -15,7 +8,7 @@ This is the main module for the eyes application.
 
 # Packages.
 import peopleDetector
-import streamProcessor
+import streamProcessorEyes
 import positionFinder
 import eyeModel
 
@@ -29,11 +22,11 @@ if __name__ == '__main__':
     detector = peopleDetector.peopleDetectorDlib()
 
     # Define video stream.
-    video_stream = streamProcessor.webcamStream()
-    
+    video_stream = streamProcessorEyes.webcamStream()
+
     # Define stream processor based on the video stream and the detector.
-#    stream_processor = streamProcessor.streamProcessorFromDetector(video_stream, detector)
-    stream_processor = streamProcessor.streamProcessorWithTracker(video_stream, detector, nb_trackers = 5, tracking_time = 100, resize_factor = 2, process_every = 2)
+#    stream_processor = streamProcessorEyes.streamProcessorFromDetector(video_stream, detector)
+    stream_processor = streamProcessorEyes.streamProcessorWithTracker(video_stream, detector, nb_trackers = 5, tracking_time = 100, resize_factor = 2, process_every = 2)
 
     # Define position finder based on the stream processor.
     # position_finder = positionFinder.videoStreamFinder(video_stream, detector)
@@ -48,4 +41,3 @@ if __name__ == '__main__':
 
     # Release handle to the webcam (does not work apparently).
     video_stream.close()
-

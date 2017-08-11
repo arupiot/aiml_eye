@@ -1,22 +1,17 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 28 13:15:27 2017
-
-@author: Lucas
-"""
-
 """
 The purpose of this module is to implement the database of faces and information.
+
 We will implement 4 functions :
+
     - Add(picture, person_name, picture_file_name) to add a person in the database.
-    - Remove(link, hardRemove = True) to remove a person from the database
-    the hardRemove parameter defines whether we remove physically the information
-    from the disk.
+    - Remove(link, hardRemove = True) to remove a person from the database. the hardRemove parameter defines whether we remove physically the information from the disk.
     - GetImage(name) to retrieve a picture of a person knowing their name.
     - GetProfile(name) to retrieve the profile of a person knowing their name.
 
 Our implementation is based on an array of the form
+
     [(encodings, name, path_to_image, profile)]
+
 for every stored image.
 """
 
@@ -72,18 +67,15 @@ class database:
 
     def add(self, frame, face_name, file_name, check_name = True):
         """
-        Attempts to update the database adding picture in path 'self.folder_name_images\\face_name\\file_name.jpg'.
+        Attempts to update the database adding picture in path 'self.folder_name_images/face_name/file_name.jpg'.
         It computes and returns 2 booleans : name_already_exists and one_face_detected,
         and the database is updated iff (one_face_detected && !name_already_exists).
 
         :param frame: The image.
         :param face_name: The name of the person in the image.
         :param file_name: The filename we want to give to the image.
-        :param check_name: Boolean to decide whether we check if the name is
-        already in the database.
-        :return: Two booleans, name_already_exists and one_face_detected, whose
-        value show whether the database was successfully updated or not, and
-        the correponding problem if not.
+        :param check_name: Boolean to decide whether we check if the name is already in the database.
+        :return: Two booleans, name_already_exists and one_face_detected, whose value show whether the database was successfully updated or not, and the correponding problem if not.
         """
         # Initialise validity booleans.
         name_already_exists = False
@@ -117,8 +109,7 @@ class database:
         If hard_remove, we also delete physically the image from the computer.
 
         :param link: The link to the image we want to erase.
-        :param hard_remove: Parameter to decide wheter or not we physically
-        erase the image from the computer.
+        :param hard_remove: Parameter to decide whether or not we physically erase the image from the computer.
         """
         # Remove the corresponding list to table_faces.
         self.table_faces = list(filter(lambda x : x[2] != link, self.table_faces))
@@ -141,8 +132,7 @@ class database:
         Returns the image corresponding to the name.
 
         :param name: The considered name.
-        :return: The corresponding image. Returns None if no image is found
-        (even though it should not happen).
+        :return: The corresponding image. Returns None if no image is found (even though it should not happen).
         """
         try:
             # Get link to image from the table of encodings.
@@ -159,9 +149,7 @@ class database:
         Returns the profile corresponding to the name.
 
         :param name: The considered name.
-        :return: A string corresponding to the profile. Either precomputed
-        profile or 'Unable to match description with profile' if name is not in
-        the database (even though it should not happen).
+        :return: A string corresponding to the profile. Either precomputed profile or 'Unable to match description with profile' if name is not in the database (even though it should not happen).
         """
         try:
             # Get profile from the table of encodings.

@@ -3,5 +3,5 @@ Python 3 libraries:
   dlib
   tqdm
   nltk
-  tkinter
+  kivy
   panda3d

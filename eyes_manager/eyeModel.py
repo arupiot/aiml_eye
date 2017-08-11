@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug  1 15:51:45 2017
-
-@author: Lucas
-"""
-
 """
 The purpose of this module is to implement a first version of the virtual eyes.
 Ultimately, several implementations can be made and compared.
@@ -43,8 +36,7 @@ class basicEye(ShowBase):
         """
         Initialization of the class.
 
-        :param function: A function with values in [-1, 1] corresponing to the
-        position of detected people.
+        :param function: A function with values in [-1, 1] corresponing to the position of detected people.
         """
         # Initialize constructors.
         self.function = function
@@ -71,6 +63,8 @@ class basicEye(ShowBase):
     def spinEyeTask(self, task):
         """
         This function defines a procedure to move the eye.
+
+        :param task: The current task.
         """
         # Get angle to display. For this model, it should be comprised in [-22, 22].
         angleDegrees = 22 * self.function()

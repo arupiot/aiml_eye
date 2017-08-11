@@ -102,3 +102,6 @@ ENV/
 
 # Database
 facial_recognition_manager/Database
+
+# Doc
+doc
