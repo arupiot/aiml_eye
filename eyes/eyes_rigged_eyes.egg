@@ -17,7 +17,7 @@
 }
 
 <Texture> Test_human:High-poly_diffuse {
-  "./tex/Test_human:High-poly_diffuse.png"
+  "./tex/Test_human_High-poly_diffuse.png"
   <Scalar> envtype { MODULATE }
 }
 
