@@ -46,25 +46,34 @@ class basicEye(ShowBase):
         # Disable the camera trackball controls.
         self.disableMouse()
         # Load the eye and add texture to it.
-        self.body = self.loader.loadModel("eyes_rigged_body.egg")
-        self.eyes = self.loader.loadModel("eyes_rigged_eyes.egg")
+        # self.body = self.loader.loadModel("eyes_rigged_body.egg")
+        # self.eyes = self.loader.loadModel("eyes_rigged_eyes.egg")
+        self.body = Actor("eyes_rigged_body.egg")
+        self.eyes = Actor("eyes_rigged_eyes.egg")
+        self.left_eye_joint = self.eyes.controlJoint(None,"modelRoot","eye.L")
+        self.joint = self.body.controlJoint(None,"modelRoot","orbicularis03.R")
+        print(self.left_eye_joint)
+        # print(self.eyes.listJoints())
         # Reparent the model to render.
         self.body.reparentTo(self.render)
         self.eyes.reparentTo(self.render)
         # Apply scale and position transforms on the model.
         # self.scene.setScale(1, 1, 1)
         # self.scene.setPos(0, 0, 0)
-        self.camera.setHpr(60, 0, 0)
         # Place camera.
-        self.camera.setPos(0, 0, 1.7)
+        self.camera.setHpr(0, 0, 0)
+        self.camera.setPos(0, -2, 1.93)
+        self.camLens.setFov(5)
         # Add the spinCameraTask procedure to the task manager.
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
 
     def spinCameraTask(self, task):
-        angleDegrees = task.time * 6.0
+        angleDegrees = 10* task.time * 6.0
         angleRadians = angleDegrees * (pi / 180.0)
-        self.camera.setPos(2 * sin(angleRadians), -2.0 * cos(angleRadians), 1.9)
-        self.camera.setHpr(angleDegrees, 0, 0)
+        # self.camera.setPos(2 * sin(angleRadians), -2.0 * cos(angleRadians), 1.9)
+        # self.camera.setHpr(angleDegrees, 0, 0)
+        self.left_eye_joint.setHpr(0, 30, angleDegrees)
+        self.joint.setHpr(angleDegrees, 0, 0)
         return Task.cont
 
 
