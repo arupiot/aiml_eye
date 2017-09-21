@@ -72,7 +72,7 @@ class streamProcessor:
         - We average the results over a number of frames.
 
     """
-    def __init__(self, video_stream, face_comparator, nb_frames_in_history = 10, closeness_threshold = 2.5, resize_factor = 4, process_every = 2):
+    def __init__(self, video_stream, face_comparator, nb_frames_in_history = 10, closeness_threshold = 2.5, resize_factor = 5.0, process_every = 2):
         """
         Initialization of the class.
 
@@ -110,7 +110,7 @@ class streamProcessor:
         # Only process a fraction of the frames.
         if (self.frame_counter % self.process_every == 0):
             # Resize frame of video for faster face recognition processing.
-            small_frame = scipy.misc.imresize(self.current_frame, 1 / self.resize_factor)
+            small_frame = scipy.misc.imresize(self.current_frame, 1.0 / self.resize_factor)
             self.current_analysis = [(name_match, distance, self.resize_factor * np.array(face_location)) for (name_match, distance, face_location) in self.face_comparator.analyseFrame(small_frame, database)]
             # Actualize frame history.
             if (len(self.frame_history) >= self.nb_frames_in_history):

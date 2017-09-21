@@ -10,6 +10,8 @@ For that, we use the kivy library.
 ################################################################################
 
 # Imports for the graphical user interface.
+from kivy.config import Config
+Config.set('kivy', 'keyboard_mode', 'systemandmulti')
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
@@ -19,12 +21,15 @@ from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
+from kivy.core.window import Window
+
 
 from kivy.properties import StringProperty
 
 from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.graphics.texture import Texture
+
 
 # Start application with full screen.
 # from kivy.core.window import Window
@@ -39,8 +44,9 @@ import facialRecognition
 import logFileWriter
 import streamProcessor
 
-# Utilitary.
+# Utilities.
 import time
+import requests
 
 ################################################################################
 # Definition of the graphical user interface.
@@ -48,7 +54,7 @@ import time
 
 
 # Define and build the layout. We insert elements into box layouts.
-class FaceRecognitionGui(BoxLayout):
+class FaceRecognitionGui(FloatLayout):
     """
     This class defines the global layout for the graphical user interface.
     """
@@ -61,61 +67,105 @@ class OutputLayout(BoxLayout):
     """
     pass
 
+class CameraLayout(BoxLayout):
+    """
+    This class defines the layout for the camera frame.
+    """
+    pass
+
 # Load the layout from string (utlimately from .kv file).
 Builder.load_string('''
+
 <OutputLayout>
-    canvas.before:
-        Color:
-            rgba: 156, 25, 26, 0.5
-        Rectangle:
-            pos: self.pos[0], self.pos[1] + 100
-            size: self.size[0], self.size[1] * 0.8
+    # canvas.before:
+    #     Color:
+    #         rgba: 1, 1, 1, .5
+    #         #rgba: 156, 25, 26, 0.5
+    #     Rectangle:
+    #         pos: self.pos[0], self.pos[1] + 100
+    #         size: self.size[0], self.size[1] * 0.8
 
     BoxLayout:
         id: output
         orientation: 'vertical'
+        padding: 10
 
         Label:
             id: output_hello
             markup: True
-            text: '[color=000000][b]Hello[/b][/color]'
+            text: '[color=000000][b]Hello![/b][/color]'
             font_size: 65
+            font_name: 'TitilliumWeb-Regular'
             size_hint: 1, .5
-            pos_hint: {'center_x':.5, 'center_y': .5}
+            #pos_hint: {'center_x':.5, 'center_y': .5}
 
         Label:
             id: output_text
             markup: True
             text: app.output_text
-            font_size: 35
+            font_size: 30
+            font_name: 'TitilliumWeb-Regular'
             size_hint: 1, .5
-            pos_hint: {'center_x':.5, 'center_y': .5}
+            #pos_hint: {'center_x':.5, 'center_y': .5}
+
+<CameraLayout>
+    # canvas.before:
+        # Color:
+        #     rgba: 1, 1, 1, 1
+        # Rectangle:
+        #     pos: self.pos
+        #     size: self.size
+        #     # pos: self.pos[0], self.pos[1] + 100
+        #     # size: self.size[0], self.size[1] * 0.8
+
+    BoxLayout:
+        id: camera
+        orientation: 'vertical'
+        padding: 10
+        Image:
+            id: webcam
+            size_hint: 1, 1
+            #pos_hint: {'center_x':.5, 'center_y': .5}
+        # Button:
+        #     text: 'Capture face'
+        #     size_hint: 1, 0.1
+        #     font_size: 30
+        #     font_name: 'TitilliumWeb-Regular'
+        #     #pos_hint: {'center_x':.5, 'center_y': .5}
+        #     on_press: app._buttonCommandCaptureFace()
+
 
 
 <FaceRecognitionGui>
-    orientation: 'vertical'
 
-    canvas.before:
-        BorderImage:
-            border: 0, 0, 0, 0
-            source: 'background.jpg'
-            pos: self.pos
-            size: self.size
+    # bg_color: 1, 1, 1, 1
+
+    # canvas.before:
+    #     # BorderImage:
+    #     #     border: 0, 0, 0, 0
+    #     #     #source: 'background.jpg'
+    #     #     pos: self.pos
+    #     #     size: self.size
+    #     Color:
+    #         rgba: 1, 1, 1, 1
+    #
+    #     Rectangle:
+    #         pos: self.pos
+    #         size: self.size
+    #         # pos: self.pos[0], self.pos[1] + 100
+    #         # size: self.size[0], self.size[1] * 0.8
 
     BoxLayout:
-        Image:
-            id: webcam
-            size_hint: 1.5, 1.5
-            pos_hint: {'center_x':.5, 'center_y': .5}
+        orientation: 'horizontal'
+        padding: 10
+        CameraLayout:
+            id: camera_layout
+            #pos_hint: {'center_x':.5, 'center_y': .5}
 
         OutputLayout:
             id: output_layout
+            #pos_hint: {'center_x':.5, 'center_y': .5}
 
-    Button:
-        text: 'Capture face'
-        size_hint: 0.4, 0.2
-        pos_hint: {'center_x':.5, 'center_y': .5}
-        on_press: app._buttonCommandCaptureFace()
 ''')
 
 
@@ -124,7 +174,7 @@ class MainApp(App):
     Main class, corresponding to the application.
     """
     # Title of the app.
-    title = 'Face Recognition'
+    title = 'AIML Face Recognition'
     # The output text.
     output_text = StringProperty('')
 
@@ -157,8 +207,10 @@ class MainApp(App):
         # Initialize gui layout.
         self.layout = FaceRecognitionGui()
 
+
         # Initialize output layout.
         self.output_layout = self.layout.ids.output_layout
+        self.camera_layout = self.layout.ids.camera_layout
         # Initialize output buttons.
         self.box_layout = BoxLayout(id = 'output_buttons')
         # Add output buttons layout to the output layout.
@@ -177,7 +229,7 @@ class MainApp(App):
         # Get the current modified frame.
         (self.clean_frame, self.frame) = self.stream_processor.drawCurrentFrame(self.database)
         # Display image from the texture.
-        self.layout.ids['webcam'].texture = self._cvToKivy(self.frame)
+        self.camera_layout.ids['webcam'].texture = self._cvToKivy(self.frame)
         # Get name.
         self.current_name = self.stream_processor.getCurrentName()
         # If name is not None, display it on the output frame.
@@ -212,6 +264,8 @@ class MainApp(App):
 
         :param name: The identified name for the person in front of the camera.
         """
+
+        self.box_layout.clear_widgets()
         # Modify the text.
         self.output_text = '[color=000000]I think you are\n' + self.current_name + '[/color]'
 
@@ -232,7 +286,17 @@ class MainApp(App):
         # Remove buttons.
         self.box_layout.clear_widgets()
         # Reinitialize text.
+        self.box_layout.add_widget(Button(text= 'Capture face', size_hint= (1, 0.1),
+                                          pos_hint= {'center_x':.5, 'center_y': .5},
+                                          on_press = lambda x:self._buttonCommandCaptureFace()))
+
         self.output_text = ''
+                #     text: 'Capture face'
+                #     size_hint: 1, 0.1
+                #     font_size: 30
+                #     font_name: 'TitilliumWeb-Regular'
+                #     #pos_hint: {'center_x':.5, 'center_y': .5}
+                #     on_press: app._buttonCommandCaptureFace()
 
 
     def _buttonCommandNameConfirmed(self):
@@ -242,12 +306,12 @@ class MainApp(App):
         profile, then modifies the commands for the two new 'Yes' 'No' buttons.
         """
         # Modify the text.
-        self.output_text = '[color=000000]Do you wish to have\npersonalized recommendations based\non your Arup People profile?[/color]'
+        self.output_text = '[color=000000]Would you like to have\npersonalised\nrecommendations\nbased\non your Arup People\nprofile?[/color]'
         # Remove old buttons.
         self.box_layout.clear_widgets()
         # Add the two buttons.
-        self.box_layout.add_widget(Button(text= 'Yes', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._buttonCommandGetRecommendation()))
-        self.box_layout.add_widget(Button(text= 'No', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
+        self.box_layout.add_widget(Button(text= 'Yes', size_hint= (0.2, 0.2), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._buttonCommandGetRecommendation()))
+        self.box_layout.add_widget(Button(text= 'No', size_hint= (0.2, 0.2), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
 
 
     def _buttonCommandGetRecommendation(self):
@@ -364,4 +428,6 @@ class MainApp(App):
 
 
 if __name__ == '__main__':
+    Window.fullscreen = True
+    Window.clearcolor = (1, 1, 1, 1)
     MainApp().run()

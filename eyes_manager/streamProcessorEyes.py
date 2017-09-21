@@ -66,7 +66,7 @@ class streamProcessorFromDetector:
     This class allows for the processig of a stream using only the given
     detector and applying it to every analysed frame.
     """
-    def __init__(self, video_stream, detector, resize_factor = 4, process_every = 2):
+    def __init__(self, video_stream, detector, resize_factor = 4.0, process_every = 2):
         """
         Initialization of the class.
 
@@ -97,7 +97,8 @@ class streamProcessorFromDetector:
         # Only process a fraction of the frames.
         if (self.frame_counter % self.resize_factor == 0):
             # Resize frame of video for faster face recognition processing
-            small_frame = scipy.misc.imresize(frame, 1 / self.resize_factor)
+            small_frame = scipy.misc.imresize(frame, 1.0 / self.resize_factor)
+            # small_frame = frame
             # Get locations for the normal frame and actualize the current locations.
             self.current_locations = self.resize_factor * np.array(self.detector.getLocations(small_frame))
             # Actualizes the current image size.
@@ -243,7 +244,7 @@ class streamProcessorWithTracker:
         # We analyse the frame if there is room for trackers.
         if not all([elements[2] for elements in self.trackers]):
             # Resize frame of video for faster face recognition processing.
-            small_frame = scipy.misc.imresize(frame, 1 / self.resize_factor)
+            small_frame = scipy.misc.imresize(frame, 1.0 / self.resize_factor)
             # Get locations.
             locations = self.resize_factor * np.array(self.detector.getLocations(small_frame))
             # Actualizes the current image size.

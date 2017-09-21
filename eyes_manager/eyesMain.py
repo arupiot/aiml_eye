@@ -16,6 +16,8 @@ import eyeModel
 ################################################################################
 # Main content of the class.
 ################################################################################
+def test():
+    return 1
 
 if __name__ == '__main__':
     # Define detector.
@@ -25,16 +27,17 @@ if __name__ == '__main__':
     video_stream = streamProcessorEyes.webcamStream()
 
     # Define stream processor based on the video stream and the detector.
-#    stream_processor = streamProcessorEyes.streamProcessorFromDetector(video_stream, detector)
-    stream_processor = streamProcessorEyes.streamProcessorWithTracker(video_stream, detector, nb_trackers = 5, tracking_time = 100, resize_factor = 2, process_every = 2)
+    stream_processor = streamProcessorEyes.streamProcessorFromDetector(video_stream, detector)
+    #stream_processor = streamProcessorEyes.streamProcessorWithTracker(video_stream, detector, nb_trackers = 5, tracking_time = 100, resize_factor = 2, process_every = 2)
 
     # Define position finder based on the stream processor.
     # position_finder = positionFinder.videoStreamFinder(video_stream, detector)
-#    position_finder = positionFinder.deterministicFinder()
+    # position_finder = positionFinder.deterministicFinder()
     position_finder = positionFinder.positionFinderFromStreamProcessor(stream_processor)
 
     # Define eye model based on the position finder.
     eye_model = eyeModel.basicEye(position_finder.getCurrentPosition)
+    # eye_model = eyeModel.basicEye(test)
 
     # Run eye model.
     eye_model.run()
