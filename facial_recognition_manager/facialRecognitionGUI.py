@@ -12,6 +12,7 @@ For that, we use the kivy library.
 # Imports for the graphical user interface.
 from kivy.config import Config
 Config.set('kivy', 'keyboard_mode', 'systemandmulti')
+#Config.set("graphics", "show_cursor", 0)
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
@@ -94,18 +95,18 @@ Builder.load_string('''
             id: output_hello
             markup: True
             text: '[color=000000][b]Hello![/b][/color]'
-            font_size: 65
+            font_size: 55
             font_name: 'TitilliumWeb-Regular'
-            size_hint: 1, .5
+            size_hint: 1, 1
             #pos_hint: {'center_x':.5, 'center_y': .5}
 
         Label:
             id: output_text
             markup: True
             text: app.output_text
-            font_size: 30
+            font_size: 25
             font_name: 'TitilliumWeb-Regular'
-            size_hint: 1, .5
+            size_hint: 1, 1
             #pos_hint: {'center_x':.5, 'center_y': .5}
 
 <CameraLayout>
@@ -124,7 +125,7 @@ Builder.load_string('''
         padding: 10
         Image:
             id: webcam
-            size_hint: 1, 1
+            size_hint: 1, .5
             #pos_hint: {'center_x':.5, 'center_y': .5}
         # Button:
         #     text: 'Capture face'
@@ -274,62 +275,6 @@ class MainApp(App):
         self.box_layout.add_widget(Button(text= 'No', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
 
 
-    def _reInitializeOutputFrame(self):
-        """
-        Reinitializes the output frame.
-        """
-        # Reinitialize current name and profile.
-        self.stream_processor.reinitializeCurrentName()
-        self.current_profile = None
-        # Reinitialize is_identified boolean.
-        self.is_identified = False
-        # Remove buttons.
-        self.box_layout.clear_widgets()
-        # Reinitialize text.
-        self.box_layout.add_widget(Button(text= 'Capture face', size_hint= (1, 0.1),
-                                          pos_hint= {'center_x':.5, 'center_y': .5},
-                                          on_press = lambda x:self._buttonCommandCaptureFace()))
-
-        self.output_text = ''
-                #     text: 'Capture face'
-                #     size_hint: 1, 0.1
-                #     font_size: 30
-                #     font_name: 'TitilliumWeb-Regular'
-                #     #pos_hint: {'center_x':.5, 'center_y': .5}
-                #     on_press: app._buttonCommandCaptureFace()
-
-
-    def _buttonCommandNameConfirmed(self):
-        """
-        Button command, if the user confirms the proposed name.
-        It modifies the text to propose a recommendation based on the user
-        profile, then modifies the commands for the two new 'Yes' 'No' buttons.
-        """
-        # Modify the text.
-        self.output_text = '[color=000000]Would you like to have\npersonalised\nrecommendations\nbased\non your Arup People\nprofile?[/color]'
-        # Remove old buttons.
-        self.box_layout.clear_widgets()
-        # Add the two buttons.
-        self.box_layout.add_widget(Button(text= 'Yes', size_hint= (0.2, 0.2), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._buttonCommandGetRecommendation()))
-        self.box_layout.add_widget(Button(text= 'No', size_hint= (0.2, 0.2), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
-
-
-    def _buttonCommandGetRecommendation(self):
-        """
-        Button command, if the user asks to have personalized recommendations.
-        It modifies the text to display the user profile, and creates a new
-        button to return to the beginning.
-        Ultimately, it should trigger an action to change the lights of the
-        exhibition and invite the user to visit the highlited exhibits.
-        """
-        # Print profile.
-        self.output_text = '[color=000000]Your profile is:\n' + self.current_profile
-        # Remove buttons.
-        self.box_layout.clear_widgets()
-        # Add one button for return.
-        self.box_layout.add_widget(Button(text= 'Return', size_hint= (0.1, 0.1), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
-
-
     def _buttonCommandCaptureFace(self):
         """
         Button command, if the user clicks on 'Capture face'.
@@ -425,6 +370,66 @@ class MainApp(App):
 
         # Call the main function.
         _popupGetName()
+
+
+    def _reInitializeOutputFrame(self):
+        """
+        Reinitializes the output frame.
+        """
+        # Reinitialize current name and profile.
+        self.stream_processor.reinitializeCurrentName()
+        self.current_profile = None
+        # Reinitialize is_identified boolean.
+        self.is_identified = False
+        # Remove buttons.
+        self.box_layout.clear_widgets()
+        # Reinitialize text.
+        capture_btn = Button(text= 'Capture face', size_hint= (1, 0.25),
+                                          pos_hint= {'center_x':.5, 'center_y': .5},
+                                          on_press = lambda x:self._buttonCommandCaptureFace())
+        # capture_btn.bind(on_press = self._buttonCommandCaptureFace)
+        self.box_layout.add_widget(capture_btn)
+
+
+        self.output_text = ''
+                #     text: 'Capture face'
+                #     size_hint: 1, 0.1
+                #     font_size: 30
+                #     font_name: 'TitilliumWeb-Regular'
+                #     #pos_hint: {'center_x':.5, 'center_y': .5}
+                #     on_press: app._buttonCommandCaptureFace()
+
+
+    def _buttonCommandNameConfirmed(self):
+        """
+        Button command, if the user confirms the proposed name.
+        It modifies the text to propose a recommendation based on the user
+        profile, then modifies the commands for the two new 'Yes' 'No' buttons.
+        """
+        # Modify the text.
+        self.output_text = '[color=000000]Would you like to have\npersonalised\nrecommendations\nbased\non your Arup People\nprofile?[/color]'
+        self.box_layout.clear_widgets()
+        # Remove old buttons.
+        # Add the two buttons.
+        self.box_layout.add_widget(Button(text= 'Yes', size_hint= (0.2, 0.3), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._buttonCommandGetRecommendation()))
+        self.box_layout.add_widget(Button(text= 'No', size_hint= (0.2, 0.3), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
+
+
+    def _buttonCommandGetRecommendation(self):
+        """
+        Button command, if the user asks to have personalized recommendations.
+        It modifies the text to display the user profile, and creates a new
+        button to return to the beginning.
+        Ultimately, it should trigger an action to change the lights of the
+        exhibition and invite the user to visit the highlited exhibits.
+        """
+        # Print profile.
+        self.output_text = '[color=000000]Your profile is:\n' + self.current_profile
+        # Remove buttons.
+        self.box_layout.clear_widgets()
+        # Add one button for return.
+        self.box_layout.add_widget(Button(text= 'Return', size_hint= (0.1, 0.3), pos_hint= {'center_x':.5, 'center_y': .5}, on_press = lambda x:self._reInitializeOutputFrame()))
+
 
 
 if __name__ == '__main__':

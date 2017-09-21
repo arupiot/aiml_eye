@@ -257,7 +257,7 @@ class basicRecommender:
         if best_score[1] > 0:
             return best_score[0]
         else:
-            return 'Unable to match description with profile'
+            return 'No Arup People profile'
 
     def computeProfile(self, name):
         """
@@ -271,7 +271,7 @@ class basicRecommender:
             personal_info = self._getInfo(name)
             profile = self._computeProfileFromText(personal_info)
         except Exception as e:
-            profile = 'Unable to match description with profile'
+            profile = 'No Arup People profile'
         return profile
 
 

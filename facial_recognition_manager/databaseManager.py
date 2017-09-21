@@ -62,7 +62,7 @@ class database:
         self.facial_recognition = facialRecognition.faceComparator()
 
         # Default profile value.
-        self.DEFAULT_PROFILE = 'Unable to match description with profile'
+        self.DEFAULT_PROFILE = 'No Arup People profile'
 
 
     def add(self, frame, face_name, file_name, check_name = True):
